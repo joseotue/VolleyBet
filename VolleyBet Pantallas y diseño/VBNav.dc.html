@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="height:80px;flex:none;display:flex;background:{{ bg }};border-top:1px solid {{ line }}"><sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5"><div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:48px"><div style="width:56px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:{{ t.pill }}"><span style="font-family:'Material Symbols Rounded';font-size:24px;color:{{ t.ic }};font-variation-settings:{{ t.fill }}">{{ t.icon }}</span></div><span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:.03em;color:{{ t.tc }}">{{ t.label }}</span></div></sc-for></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:80},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;inicio&quot;,&quot;equipo&quot;,&quot;mercado&quot;,&quot;predicciones&quot;,&quot;ranking&quot;],&quot;default&quot;:&quot;inicio&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;light&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const L = !!this.props.light, a = this.props.active ?? 'inicio';
+    const tabs = [['inicio','Inicio','home'],['equipo','Mi equipo','groups'],['mercado','Mercado','storefront'],['predicciones','Predicciones','online_prediction'],['ranking','Ranking','leaderboard']].map(([k,label,icon]) => {
+      const on = k === a;
+      return { label, icon, pill: on ? (L ? '#FFE1D0' : 'rgba(255,106,26,.22)') : 'transparent', ic: on ? (L ? '#9A3412' : '#FF8A4C') : (L ? '#4A5470' : '#A3ADC2'), tc: on ? (L ? '#0B1020' : '#F2F4F8') : (L ? '#4A5470' : '#A3ADC2'), fill: on ? "'FILL' 1" : "'FILL' 0" };
+    });
+    return { tabs, bg: L ? '#FFFFFF' : '#10172A', line: L ? '#E1E5EE' : '#222B45' };
+  }
+}
+</script>
+</body>
+</html>

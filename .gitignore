@@ -1,0 +1,56 @@
+# ==========================================
+# Archivos del Sistema Operativo y Temporales
+# ==========================================
+.DS_Store
+Thumbs.db
+.thumbnail
+*.tmp
+*.temp
+
+# ==========================================
+# Entornos de Desarrollo e IDEs
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ==========================================
+# Variables de Entorno y Secretos
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# Python (Scripts y Caché)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# ==========================================
+# Asistentes y Agentes de IA
+# (Se regeneran en el equipo donde se inicie la IA)
+# ==========================================
+.agents/
+.gemini/
+.claude/
+.cursor/
+.windsurf/
+.copilot/
+
+# ==========================================
+# BMad: Configuración personal y cachés locales
+# (Evita solapamientos entre dispositivos y usuarios)
+# ==========================================
+*.user.toml
+*.user.yaml
+*.user.yml
+_bmad/render/*
+!_bmad/render/.gitignore
+.bmad-loop/
