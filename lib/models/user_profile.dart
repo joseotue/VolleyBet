@@ -16,15 +16,15 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      id: json['id'] as String,
-      username: json['username'] as String? ?? 'Usuario',
+      id: json['id']?.toString() ?? '',
+      username: json['username']?.toString() ?? 'Usuario',
       pointsBalance: (json['points_balance'] as num?)?.toInt() ?? 1000,
       badges: (json['badges'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
       updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'] as String)
+          ? DateTime.tryParse(json['updated_at'].toString())
           : null,
     );
   }

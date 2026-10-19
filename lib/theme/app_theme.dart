@@ -19,8 +19,9 @@ class AppTheme {
   static const Color errorRed = Color(0xFFE53935);
   static const Color successGreen = Color(0xFF43A047);
   static const Color dividerColor = Color(0xFF333A4D);
+  static final ThemeData darkTheme = _buildDarkTheme();
 
-  static ThemeData get darkTheme {
+  static ThemeData _buildDarkTheme() {
     final baseColorScheme = ColorScheme.dark(
       primary: primaryOrange,
       onPrimary: Colors.white,

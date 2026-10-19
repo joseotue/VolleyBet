@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:volleybet/models/user_profile.dart';
+import 'package:volleybet/screens/auth/auth_gate.dart';
 import 'package:volleybet/screens/auth/login_screen.dart';
+import 'package:volleybet/screens/home/home_screen.dart';
 import 'package:volleybet/services/supabase_service.dart';
 import 'package:volleybet/theme/app_theme.dart';
 
@@ -192,6 +194,56 @@ void main() {
       );
     });
 
+    testWidgets('LoginScreen acepta formatos de correo con alias plus-addressing',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const LoginScreen(),
+        ),
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Correo electrónico'),
+        'usuario+beta1@volleybet.udd',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Contraseña'),
+        'password123',
+      );
+
+      await tester.tap(find.text('ENTRAR AL JUEGO'));
+      await tester.pump();
+
+      // No debe mostrar error de formato de correo
+      expect(
+        find.text('Ingresa un formato de correo válido'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('Al alternar a modo registro se muestra el campo de Gamer Tag/Usuario',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const LoginScreen(),
+        ),
+      );
+
+      // Inicialmente en login no existe el campo de nombre de usuario
+      expect(find.text('Nombre de usuario / Gamer Tag'), findsNothing);
+
+      // Alternar a modo registro
+      await tester.tap(find.text('¿No tienes cuenta? Regístrate aquí'));
+      await tester.pump();
+
+      // Debe aparecer el título de registro y el campo de Gamer Tag
+      expect(find.text('CREAR CUENTA'), findsOneWidget);
+      expect(find.text('Nombre de usuario / Gamer Tag'), findsOneWidget);
+      expect(find.text('REGISTRARME'), findsOneWidget);
+    });
+
     testWidgets('Al presionar botón de acceso rápido de Lucas se cargan sus credenciales en el formulario',
         (WidgetTester tester) async {
       await tester.pumpWidget(
@@ -206,8 +258,51 @@ void main() {
       await tester.tap(lucasButton);
       await tester.pump();
 
-      // Verificar que los campos reflejen las credenciales del perfil seleccionado
+      // Verificar que los campos reflejen tanto el correo como la contraseña de Lucas
       expect(find.text('lucas@volleybet.udd'), findsOneWidget);
+      expect(find.text('volleybet123'), findsOneWidget);
+    });
+  });
+
+  group('HU-01: AuthGate & HomeScreen Tests', () {
+    testWidgets('AuthGate redirige a LoginScreen cuando no existe sesión activa',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const AuthGate(),
+        ),
+      );
+
+      await tester.pump();
+
+      // Debe montar LoginScreen
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.text('VOLLEYBET'), findsOneWidget);
+      expect(find.text('INICIAR SESIÓN'), findsOneWidget);
+    });
+
+    testWidgets('HomeScreen muestra branding, balance de puntos y botón de cerrar sesión',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const HomeScreen(),
+        ),
+      );
+
+      // Esperar resolución de microtareas iniciales
+      await tester.pump();
+      await tester.pump();
+
+      // Branding y saldo
+      expect(find.text('VOLLEYBET'), findsOneWidget);
+      expect(find.text('1000 PTS VIRTUALES'), findsOneWidget);
+      expect(find.text('HU-01: Setup & Auth Completado'), findsOneWidget);
+
+      // Botón de cerrar sesión en AppBar y al final
+      expect(find.byTooltip('Cerrar Sesión'), findsOneWidget);
+      expect(find.text('Cerrar Sesión'), findsOneWidget);
     });
   });
 }

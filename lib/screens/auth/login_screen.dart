@@ -18,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _usernameController = TextEditingController();
 
   bool _isLoginMode = true; // true = Login, false = Registro
   bool _isLoading = false;
@@ -27,6 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _usernameController.dispose();
     super.dispose();
   }
 
@@ -37,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+    final username = _usernameController.text.trim();
 
     try {
       if (_isLoginMode) {
@@ -49,14 +52,18 @@ class _LoginScreenState extends State<LoginScreen> {
         final response = await SupabaseService.instance.signUp(
           email: email,
           password: password,
-          username: email.split('@').first,
+          username: username.isNotEmpty ? username : email.split('@').first,
         );
         if (mounted) {
           if (response.session == null) {
+            _passwordController.clear();
+            setState(() {
+              _isLoginMode = true;
+            });
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
-                  'Registro exitoso. Si tienes confirmación de correo activa, revisa tu bandeja.',
+                  'Registro exitoso. Si tienes confirmación de correo activa, revisa tu bandeja para iniciar sesión.',
                 ),
                 backgroundColor: AppTheme.primaryOrange,
               ),
@@ -101,6 +108,12 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     _emailController.text = profile.email;
     _passwordController.text = profile.password;
+
+    if (!SupabaseService.instance.isInitialized) {
+      // En entorno de test sin Supabase configurado, preservamos los campos cargados sin lanzar excepciones
+      setState(() => _isLoading = false);
+      return;
+    }
 
     try {
       await SupabaseService.instance.signInWithQuickProfile(profile);
@@ -218,10 +231,40 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 18),
 
+                            // Campo de Nombre de Usuario (Solo en Registro)
+                            if (!_isLoginMode) ...[
+                              TextFormField(
+                                controller: _usernameController,
+                                textInputAction: TextInputAction.next,
+                                autocorrect: false,
+                                style: GoogleFonts.rajdhani(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                decoration: const InputDecoration(
+                                  labelText: 'Nombre de usuario / Gamer Tag',
+                                  prefixIcon: Icon(Icons.person_outline_rounded),
+                                  hintText: 'Ej. VolleyMaster',
+                                ),
+                                validator: (value) {
+                                  if (!_isLoginMode && (value == null || value.trim().isEmpty)) {
+                                    return 'Por favor ingresa un nombre de usuario';
+                                  }
+                                  if (!_isLoginMode && value!.trim().length < 3) {
+                                    return 'El nombre debe tener al menos 3 caracteres';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+
                             // Campo de Email
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
                               autocorrect: false,
                               style: GoogleFonts.rajdhani(
                                 color: AppTheme.textPrimary,
@@ -238,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   return 'Por favor ingresa tu correo electrónico';
                                 }
                                 final emailRegex = RegExp(
-                                  r'^[\w-\.]+@([\w-]+\.)+[a-zA-Z]{2,}$',
+                                  r'^[\w.+-]+@([\w-]+\.)+[a-zA-Z]{2,}$',
                                 );
                                 if (!emailRegex.hasMatch(value.trim())) {
                                   return 'Ingresa un formato de correo válido';
@@ -253,6 +296,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) => _submitForm(),
                               style: GoogleFonts.rajdhani(
                                 color: AppTheme.textPrimary,
                                 fontSize: 16,

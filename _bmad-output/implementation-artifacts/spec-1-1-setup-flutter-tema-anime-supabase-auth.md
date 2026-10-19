@@ -71,6 +71,27 @@ context:
 - Given la pantalla `LoginScreen`, when se presiona el botón de acceso rápido de uno de los 3 integrantes o se ingresan credenciales válidas, then la sesión se inicia en Supabase y el `AuthGate` transiciona fluidamente a `HomeScreen`.
 - Given la pantalla `HomeScreen`, when el usuario presiona "Cerrar Sesión", then la sesión de Supabase se destruye y la aplicación retorna a `LoginScreen`.
 
+### Review Findings
+
+- [x] [Review][Decision] Architectural choice between consolidated LoginScreen toggle vs separate RegisterScreen file — Resolved: user selected retaining the consolidated single-screen toggle (_isLoginMode) for smoother mobile UX.
+- [x] [Review][Patch] Exposure of SUPABASE_SECRET_KEY in .env.example template violates client security boundary [.env.example:6]
+- [x] [Review][Patch] AuthGate session evaluation falls back to stale currentSession on sign-out and ignores stream errors [lib/screens/auth/auth_gate.dart:18-25]
+- [x] [Review][Patch] Unhandled startup exception in main() crashes app if .env is missing [lib/main.dart:12-16]
+- [x] [Review][Patch] SupabaseService.signUp upsert risks resetting points balance to 1000 [lib/services/supabase_service.dart:107-115]
+- [x] [Review][Patch] Registration mode lacks dedicated username input field [lib/screens/auth/login_screen.dart:253-286]
+- [x] [Review][Patch] Core acceptance criteria (AuthGate routing, HomeScreen sign-out, valid submission) lack automated widget test coverage [test/widget_test.dart:1588-1604]
+- [x] [Review][Patch] Defensive type conversions in UserProfile.fromJson, email regex plus-addressing support, and AppTheme.darkTheme memoization [lib/models/user_profile.dart:19]
+
+#### Rejected Appendix
+- [Rejected][False] Empty providers/ and widgets/ directories: spec explicitly leaves these for subsequent stories 1.2–1.4.
+- [Rejected][False] RangeError on empty TeamQuickProfile.name: teamProfiles is a static const list with predefined non-empty strings.
+- [Rejected][False] Missing AndroidManifest.xml internet permission: permission is present at android/app/src/main/AndroidManifest.xml:2; was only absent from the scoped patch diff.
+- [Rejected][Low] Contextual loading indicator on individual quick login cards: main submit button already displays loading feedback.
+- [Rejected][Low] Displaying user badges on HomeScreen: badge visualization is scheduled for Story 1.5.
+- [Rejected][Low] Visual progress indicator during sign-out: sign-out completes near-instantaneously in local client state.
+- [Rejected][Low] Offline Google Fonts asset bundling: runtime font fetching is standard for early MVP phase.
+
+
 ## Implementation Notes
 
 - Proyecto Flutter inicializado con soporte multiplataforma (Android, iOS, Web) y dependencias `supabase_flutter`, `flutter_dotenv`, `google_fonts`.
@@ -80,7 +101,7 @@ context:
 - `AuthGate` reactivo basado en `StreamBuilder` sobre `onAuthStateChange`.
 - `LoginScreen` con validaciones estrictas y selector de acceso rápido con 1 toque para los 3 miembros del equipo.
 - `HomeScreen` con verificación de usuario, saldo de puntos inicial (1,000 pts) y botón de cierre de sesión.
-- Suite de pruebas automatizadas en `test/widget_test.dart` (7/7 aprobadas).
+- Suite de pruebas automatizadas en `test/widget_test.dart` (14/14 aprobadas).
 - Verificado con `flutter analyze` (0 advertencias/errores) y `flutter build web --release` (compilación limpia).
 
 ## Spec Change Log

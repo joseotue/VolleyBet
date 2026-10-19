@@ -67,17 +67,39 @@ class SupabaseService {
     );
   }
 
+  SupabaseClient? _clientOverride;
+
+  /// Permite inyectar o mockear el cliente para pruebas unitarias y de widgets.
+  void setClientForTesting(SupabaseClient? client) {
+    _clientOverride = client;
+  }
+
+  /// Comprueba si Supabase ha sido inicializado correctamente
+  bool get isInitialized {
+    if (_clientOverride != null) return true;
+    try {
+      Supabase.instance;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Instancia del cliente de Supabase
-  SupabaseClient get client => Supabase.instance.client;
+  SupabaseClient get client {
+    if (_clientOverride != null) return _clientOverride!;
+    return Supabase.instance.client;
+  }
 
   /// Usuario autenticado actual en Supabase
-  User? get currentUser => client.auth.currentUser;
+  User? get currentUser => isInitialized ? client.auth.currentUser : null;
 
   /// Sesión activa actual
-  Session? get currentSession => client.auth.currentSession;
+  Session? get currentSession => isInitialized ? client.auth.currentSession : null;
 
   /// Stream reactivo de cambios en el estado de autenticación
-  Stream<AuthState> get authStateChanges => client.auth.onAuthStateChange;
+  Stream<AuthState> get authStateChanges =>
+      isInitialized ? client.auth.onAuthStateChange : const Stream.empty();
 
   /// Iniciar sesión con email y contraseña
   Future<AuthResponse> signInWithPassword({
@@ -102,16 +124,20 @@ class SupabaseService {
       data: username != null ? {'username': username} : null,
     );
 
-    // Si se crea el usuario, asegurar entrada en profiles si aún no existe
+    // Si se crea el usuario, asegurar entrada en profiles si aún no existe sin sobrescribir puntos
     if (response.user != null) {
       try {
-        await client.from('profiles').upsert({
-          'id': response.user!.id,
-          'username': username ?? email.split('@').first,
-          'points_balance': 1000,
-        });
-      } catch (_) {
-        // En caso de que RLS o trigger lo gestione
+        await client.from('profiles').upsert(
+          {
+            'id': response.user!.id,
+            'username': username ?? email.split('@').first,
+            'points_balance': 1000,
+          },
+          onConflict: 'id',
+          ignoreDuplicates: true,
+        );
+      } catch (e) {
+        // En caso de que RLS o trigger de DB lo gestione
       }
     }
 
@@ -128,11 +154,13 @@ class SupabaseService {
 
   /// Cierra la sesión activa actual en Supabase
   Future<void> signOut() async {
+    if (!isInitialized) return;
     await client.auth.signOut();
   }
 
   /// Obtener el perfil del usuario desde public.profiles
   Future<UserProfile?> getUserProfile(String userId) async {
+    if (!isInitialized) return null;
     try {
       final data = await client
           .from('profiles')
