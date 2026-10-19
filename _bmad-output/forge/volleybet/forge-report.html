@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VolleyBet - Forge Report (Idea Hardened)</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --accent: #ff6b35;
+      --accent-glow: rgba(255, 107, 53, 0.2);
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --success: #2ea043;
+      --danger: #f85149;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px;
+      position: relative;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .header-text h1 {
+      font-size: 2.2rem;
+      color: #fff;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-text p {
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-size: 1rem;
+    }
+    .stamp-container {
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-size: 1.3rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+    ul { list-style: none; }
+    li {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    li::before {
+      content: "•";
+      position: absolute;
+      left: 8px;
+      color: var(--accent);
+      font-weight: bold;
+    }
+    .locked-item::before { content: "🔒"; left: 0; font-size: 0.85rem; }
+    .rejected-item::before { content: "✕"; left: 4px; color: var(--danger); font-weight: bold; }
+    .badge-pill {
+      display: inline-block;
+      background: rgba(255, 107, 53, 0.15);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    .personas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-top: 12px;
+    }
+    .persona-card {
+      background: #1c2128;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-size: 0.88rem;
+    }
+    .persona-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .persona-role {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      margin-bottom: 6px;
+    }
+    .persona-quote {
+      font-style: italic;
+      color: #c9d1d9;
+    }
+    .meta-footer {
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+      margin-top: 32px;
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-text">
+        <h1>🏐 VolleyBet</h1>
+        <p>Reporte de Forjado de Idea · BMad Forge Session</p>
+      </div>
+      <div class="stamp-container">
+        <!-- Prominent inline SVG HARDENED Stamp -->
+        <svg width="150" height="90" viewBox="0 0 150 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g transform="rotate(-6 75 45)">
+            <rect x="5" y="5" width="140" height="80" rx="8" stroke="#2ea043" stroke-width="4" stroke-dasharray="10 4" fill="rgba(46, 160, 67, 0.08)"/>
+            <rect x="10" y="10" width="130" height="70" rx="5" stroke="#2ea043" stroke-width="2"/>
+            <text x="75" y="42" fill="#2ea043" font-family="Impact, Arial Black, sans-serif" font-size="22" letter-spacing="3" text-anchor="middle">HARDENED</text>
+            <text x="75" y="60" fill="#2ea043" font-family="-apple-system, sans-serif" font-size="10" font-weight="700" letter-spacing="1.5" text-anchor="middle">IDEA BLINDADA</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="section-title">🎯 Resumen del Resultado</div>
+    <div class="card" style="margin-bottom: 28px;">
+      <p>La idea original de <strong>VolleyBet</strong> (un fantasy de 6 titulares + 3 suplentes dependiente de métricas de jugadores individuales) se reestructuró con éxito tras detectar que las APIs de datos individuales son inaccesibles y que la curva de aprendizaje para principiantes era insostenible.</p>
+      <p style="margin-top: 8px;">El concepto emerge <strong>blindado</strong> como un <strong>juego de pronósticos deportivos por equipos con economía 100% virtual</strong>, complementado por un <strong>Modo Aprender (trivia finita sin riesgo)</strong> que enseña el deporte de forma interactiva y entrega la insignia <em>Experto Junior en Voleibol</em>, con soporte para <strong>simulación con datos históricos</strong> para testing y defensa académica.</p>
+    </div>
+
+    <div class="section-title">🔒 Decisiones Blindadas (Locks)</div>
+    <div class="grid">
+      <div class="card">
+        <ul>
+          <li class="locked-item"><strong>Foco en Equipos (no en atletas individuales):</strong> Pronósticos de partidos de vóley aprovechando las cuotas de mercado (Odds/Bets) de las APIs de Sportradar y API-Volleyball.</li>
+          <li class="locked-item"><strong>Economía 100% Virtual:</strong> Bolsa inicial de puntos de cortesía. Cero dinero real, cero licencias de juego; apto para tiendas y público joven.</li>
+          <li class="locked-item"><strong>Modo Aprender Finito:</strong> Minijuego de trivia educativo por capítulos (sets, puntos, rotaciones) completable una sola vez para evitar farming, otorgando la insignia <em>"Experto Junior en Voleibol"</em>.</li>
+          <li class="locked-item"><strong>Doble Cobertura (Clubes + Selecciones):</strong> Ligas top de clubes (SuperLega, PlusLiga, etc.) para continuidad semanal y grandes torneos de selecciones (VNL, Mundiales, JJ.OO.) con multiplicador de recompensa; masculino y femenino.</li>
+          <li class="locked-item"><strong>Modo Trivia para Selecciones:</strong> Preguntas históricas sobre torneos internacionales para sostener la actividad y ganar puntos fuera de calendario.</li>
+          <li class="locked-item"><strong>Motor de Simulación / Histórico:</strong> Permite probar y demostrar el flujo completo de apuestas y resolución sobre temporadas pasadas sin depender de partidos en vivo.</li>
+          <li class="locked-item"><strong>Meta-Juego Acotado (3 Insignias):</strong>
+            <span class="badge-pill">1. Experto Junior</span> (Modo Aprender completado),
+            <span class="badge-pill">2. Francotirador</span> (racha de 3 aciertos),
+            <span class="badge-pill">3. Líder de Tabla</span> (Top semanal en Ranking).
+          </li>
+          <li class="locked-item"><strong>Estética Manga / Haikyu!!:</strong> Líneas de velocidad, tramas halftone y colores vibrantes en Flutter (Material 3).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-title">✕ Opciones Descartadas y Razones</div>
+    <div class="grid">
+      <div class="card">
+        <ul>
+          <li class="rejected-item"><strong>Fantasy tradicional de jugadores individuales:</strong> Descartado porque las APIs de datos individuales (VolleyStation / Genius Sports) son inaccesibles y costosas, y abrumaban a usuarios no iniciados.</li>
+          <li class="rejected-item"><strong>Apuestas con dinero real:</strong> Descartado por requerir licencias de gambling (Curacao/SCJ) y ser incompatible con la audiencia escolar/juvenil de Haikyu!!.</li>
+          <li class="rejected-item"><strong>Tutorial estático tradicional:</strong> Descartado por alta tasa de abandono; sustituido por el Modo Aprender con recompensa.</li>
+          <li class="rejected-item"><strong>Lanzamiento solo con liga local menor o solo selecciones:</strong> Descartado por estacionalidad extrema (10 meses vacíos en selecciones o falta de datos en liga local).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-title">⚠️ Puntos Débiles que Superaron el Escrutinio</div>
+    <div class="card" style="margin-bottom: 28px;">
+      <ul>
+        <li><strong>Costo/Cuota de las APIs deportivas:</strong> Aunque Sportradar y API-Volleyball proveen los endpoints necesarios, los planes gratuitos tienen límites de peticiones diarias. Se mitigará almacenando en caché local los partidos y cuotas.</li>
+        <li><strong>Equilibrio tonal:</strong> La estética manga debe enriquecer la interfaz deportiva sin hacer que los datos de ligas reales parezcan un simulador puramente ficticio.</li>
+      </ul>
+    </div>
+
+    <div class="section-title">👥 Personas que Pusieron a Prueba la Idea</div>
+    <div class="personas-grid">
+      <div class="persona-card">
+        <div class="persona-header">📏 Level</div>
+        <div class="persona-role">Claim Checker (Anti-Consensus)</div>
+        <div class="persona-quote">"Atacó el supuesto de que un no-iniciado descargaría un fantasy sin un gancho previo."</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">🪵 Splinter</div>
+        <div class="persona-role">Consensus Challenger</div>
+        <div class="persona-quote">"Desafió la brecha entre el fanatismo por el anime Haikyu!! y seguir ligas de vóley de la vida real."</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">🚢 Dana</div>
+        <div class="persona-role">The Pragmatist</div>
+        <div class="persona-quote">"Alertó sobre el scope creep y la trampa del abismo temporal de los torneos cortos."</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">🎨 Sally</div>
+        <div class="persona-role">UX Designer</div>
+        <div class="persona-quote">"Identificó la parálisis por análisis si se le pedía al novato estimar números abiertos."</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">🎯 Yui</div>
+        <div class="persona-role">The Craftsman</div>
+        <div class="persona-quote">"Validó la arquitectura apoyada directamente en Odds/Bets precalculadas de las APIs."</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">Valeria</div>
+        <div class="persona-role">Product Lead Fantasy</div>
+        <div class="persona-quote">"Expuso el riesgo de que el fantasy sin atletas conocidos pareciera una planilla de Excel."</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">Ignacio</div>
+        <div class="persona-role">Ingeniero de APIs Deportivas</div>
+        <div class="persona-quote">"Evidenció el monopolio y costo millonario de las estadísticas individuales FIVB."</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">Camila</div>
+        <div class="persona-role">Diseñadora de Economía F2P</div>
+        <div class="persona-quote">"Fijó la necesidad de que el Modo Aprender sea finito para evitar el farming infinito de puntos."</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">Tomás</div>
+        <div class="persona-role">Evaluador Técnico UDD</div>
+        <div class="persona-quote">"Destacó el valor del modo simulación histórica para poder defender y evaluar la app en vivo."</div>
+      </div>
+    </div>
+
+    <div class="meta-footer">
+      <span>Workspace: <code>_bmad-output/forge/volleybet/</code></span>
+      <span>Fecha: 15 de Octubre, 2026</span>
+    </div>
+  </div>
+</body>
+</html>

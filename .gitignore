@@ -2,18 +2,73 @@
 # Archivos del Sistema Operativo y Temporales
 # ==========================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 .thumbnail
 *.tmp
 *.temp
+*.bak
+*.swp
+*.swo
+*~
 
 # ==========================================
 # Entornos de Desarrollo e IDEs
 # ==========================================
 .vscode/
 .idea/
-*.swp
-*.swo
+*.iml
+*.ipr
+*.iws
+
+# ==========================================
+# Flutter & Dart (Compilación y Caché)
+# ==========================================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+.metadata
+coverage/
+lib/generated_plugin_registrant.dart
+
+# ==========================================
+# Android (Artefactos locales y binarios)
+# ==========================================
+**/android/local.properties
+**/android/.gradle/
+**/android/captures/
+**/android/**/GeneratedPluginRegistrant.java
+**/.cxx/
+**/android/**/gradle-wrapper.jar
+key.properties
+**/*.keystore
+**/*.jks
+
+# ==========================================
+# iOS (Artefactos locales y CocoaPods)
+# ==========================================
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/**/Pods/
+**/ios/**/.symlinks/
+**/ios/**/DerivedData/
+**/ios/**/xcuserdata
+**/ios/Runner/GeneratedPluginRegistrant.*
 
 # ==========================================
 # Variables de Entorno y Secretos

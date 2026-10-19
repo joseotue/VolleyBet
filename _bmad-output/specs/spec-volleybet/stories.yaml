@@ -1,0 +1,44 @@
+- id: "1"
+  title: Setup inicial de Flutter, Tema Anime M3, Supabase Auth y AuthGate
+  description: >-
+    Configura el proyecto Flutter en Android Studio con soporte Web/Móvil, aplicando el tema anime Material 3. Implementa el login y registro con Supabase Auth y AuthGate para proteger la aplicación.
+  spec_checkpoint: false
+  done_checkpoint: false
+  invoke_dev_with: >-
+    Cumplir Requisito 1 del curso. Usar `supabase_flutter`; estructurar carpetas en 3 capas (`models/`, `services/`, `screens/`, `widgets/`, `providers/`).
+
+- id: "2"
+  title: Consumo de API Deportiva con dio, FutureBuilder y Detalle con Hero
+  description: >-
+    Consume la cartelera de partidos y cuotas usando dio, renderizando la lista con FutureBuilder manejando estados de carga y error. La navegación al detalle pasa el modelo por constructor e incluye animación Hero en el escudo.
+  spec_checkpoint: false
+  done_checkpoint: false
+  invoke_dev_with: >-
+    Cumplir Requisitos 2, 3, 4 y 8. Manejar los 3 estados del FutureBuilder (waiting, error, data). Extraer componentes como widgets reutilizables en archivos propios.
+
+- id: "3"
+  title: Formulario con Validación y Tabla en Supabase con RLS (CRUD)
+  description: >-
+    Implementa un Form con TextFormField y validator para ingresar montos de apuestas. Conecta con la tabla `bets` en Supabase bajo RLS para permitir Crear, Ver, Editar monto y Cancelar apuestas del usuario autenticado.
+  spec_checkpoint: false
+  done_checkpoint: false
+  invoke_dev_with: >-
+    Cumplir Requisitos 5 y 6. Implementar políticas RLS con `auth.uid() = user_id`. Validar en el formulario que el monto no exceda el saldo ni sea menor a 1.
+
+- id: "4"
+  title: Manejo de Estado con Provider y Motor de Simulación Acelerada
+  description: >-
+    Centraliza el saldo de puntos, apuestas activas y resultados mediante Provider con ChangeNotifier. Añade el motor de simulación para acelerar el fin de partidos, liquidando apuestas en Supabase y actualizando la interfaz con notifyListeners.
+  spec_checkpoint: false
+  done_checkpoint: true
+  invoke_dev_with: >-
+    Cumplir Requisito 7 del curso. Usar MultiProvider, ChangeNotifier y Consumer / context.watch<T>(). Liquidar apuestas actualizando el saldo y evaluando la racha de aciertos.
+
+- id: "5"
+  title: Modo Aprender, Ranking, Animaciones Implícitas y Verificación Web
+  description: >-
+    Agrega la trivia del Modo Aprender con la insignia inicial, la tabla de ranking en vivo entre los 3 perfiles y microinteracciones con AnimatedScale / AnimatedContainer. Verifica la compilación Flutter Web para Vercel y el historial de commits.
+  spec_checkpoint: false
+  done_checkpoint: true
+  invoke_dev_with: >-
+    Cumplir Requisitos 4, 8 y 9. Incluir AnimatedScale en la confirmación de cuotas. Garantizar commits balanceados de los 3 integrantes del grupo y verificar que `flutter build web` compile limpiamente.
