@@ -1,0 +1,92 @@
+apikey: b7541a26cfa1e67b768433112b9a617f
+
+Solicitud: {"get": "","parameters": [],"errors": {"token": "Missing application key, Check our documentation on how to add your API key in headers.","error": "4xHe"},"results": 0,"paging": {"current": 1,"total": 1},"response": []}
+
+Explicacion en detalle
+
+Esta API funciona así: tu programa le hace un pedido a una URL y recibe los datos en formato JSON. Para que te responda, cada pedido tiene que llevar tu API key. Lo que guardaste en el txt como "API-SPORTS" es la **URL base**: `https://v1.volleyball.api-sports.io/`.
+
+## Cómo se arma una llamada
+
+Cada llamada tiene 3 partes:
+
+1. **URL base + endpoint**, que indica qué dato quieres. Por ejemplo, `https://v1.volleyball.api-sports.io/leagues`.
+2. **Parámetros (filtros)**, que van después de un `?`. Por ejemplo, `/games?league=3&season=2024`.
+3. **Header con tu key**, que siempre se llama `x-apisports-key: TU_KEY`.
+
+Hay dos reglas importantes:
+
+- Solo acepta pedidos **GET**.
+- Solo acepta el header `x-apisports-key`. Si agregas otros headers, la API devuelve error.
+
+## Primera prueba (no consume cuota)
+
+Abre una terminal y pega esto, poniendo tu key:
+
+```bash
+curl -H "x-apisports-key: TU_KEY" https://v1.volleyball.api-sports.io/status
+```
+
+Si te responde con tu plan y `"requests": {"current": ..., "limit_day": 100}`, la key funciona. Esta llamada a `/status` no gasta cuota.
+
+## Flujo típico para llegar a los partidos
+
+Los endpoints se encadenan usando IDs:
+
+1. `/countries` o `/leagues?country=Italy` → obtienes el **id de la liga**.
+2. `/seasons` → ves las temporadas disponibles. Se escriben con 4 dígitos: la temporada 2023-24 es `2023`.
+3. `/teams?league=ID&season=2024` → obtienes los equipos y sus IDs.
+4. `/games?league=ID&season=2024&timezone=America/Santiago` → partidos con estado (NS, S1–S5, FT…), sets y resultados. Se actualizan cada 15 segundos.
+5. `/standings?league=ID&season=2024` → tabla de posiciones.
+6. Opcionales:
+   - `/games/h2h?h2h=ID1-ID2` → historial entre dos equipos.
+   - `/odds?game=ID` → cuotas de apuestas.
+
+## En Flutter (Dart) para VolleyBet
+
+```dart
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+const baseUrl = 'https://v1.volleyball.api-sports.io';
+const apiKey = String.fromEnvironment('API_SPORTS_KEY');
+
+Future<List<dynamic>> getGames(int league, int season) async {
+  final uri = Uri.parse('$baseUrl/games').replace(queryParameters: {
+    'league': '$league',
+    'season': '$season',
+    'timezone': 'America/Santiago',
+  });
+  final res = await http.get(uri, headers: {'x-apisports-key': apiKey});
+  final body = jsonDecode(res.body);
+  if (body['errors'] is Map && (body['errors'] as Map).isNotEmpty) {
+    throw Exception(body['errors'].toString());
+  }
+  return body['response'];
+}
+```
+
+Para correr la app con tu key, sin que la key quede escrita en el código:
+
+```bash
+flutter run --dart-define=API_SPORTS_KEY=tu_key
+```
+
+## Cómo leer la respuesta
+
+Todas las respuestas tienen la misma forma:
+
+```json
+{ "get": "games", "parameters": {...}, "errors": [], "results": 12, "response": [ ... ] }
+```
+
+- Los datos que te sirven están siempre en `response`.
+- Revisa siempre `errors`: la API puede devolver **200 OK con errores adentro**, por ejemplo si la key es inválida o se te acabó la cuota.
+
+## Consejos
+
+- **Cuota**: el plan gratis da 100 llamadas al día. Guarda los datos que cambian poco (ligas, equipos, temporadas) en caché o en tu base de datos, y llama a `/games` solo cuando lo necesites.
+- **Seguridad**: no subas la key a GitHub. Agrega el txt al `.gitignore`. En el panel (dashboard) puedes restringir la key a ciertos dominios o IPs.
+- **Probar sin código**: el dashboard tiene un *Live tester* para probar endpoints antes de programarlos.
+
+Si quieres, armo una clase `ApiSportsService` completa en Dart con modelos para los partidos y la tabla de posiciones.

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../services/supabase_service.dart';
 import '../../models/user_profile.dart';
 import '../../theme/app_theme.dart';
+import '../matches/matches_screen.dart';
 
 /// Pantalla protegida temporal de VolleyBet para verificar sesión autenticada.
 /// Cumple con la validación de transición de AuthGate y Cierre de Sesión (HU-01).
@@ -186,6 +187,84 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 20),
 
+              // Tarjeta de Acceso a Cartelera de Partidos (HU-02)
+              Card(
+                color: const Color(0xFF222838),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: const BorderSide(color: AppTheme.primaryOrange, width: 1.5),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryOrange.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.sports_volleyball_rounded,
+                              color: AppTheme.primaryOrange,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'CARTELERA DE VOLEIBOL',
+                                  style: GoogleFonts.teko(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.primaryOrange,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                Text(
+                                  'Consumo de API deportiva con failover resiliente y cuotas colectivas.',
+                                  style: GoogleFonts.rajdhani(
+                                    fontSize: 13,
+                                    color: AppTheme.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.arrow_forward_rounded),
+                        label: const Text('EXPLORAR CARTELERA'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryOrange,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MatchesScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
               // Tarjeta de estado de arquitectura y requisitos docentes
               Card(
                 child: Padding(
@@ -201,12 +280,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             size: 24,
                           ),
                           const SizedBox(width: 10),
-                          Text(
-                            'HU-01: Setup & Auth Completado',
-                            style: GoogleFonts.barlowCondensed(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
+                          Expanded(
+                            child: Text(
+                              'HU-01: Setup & Auth Completado',
+                              style: GoogleFonts.barlowCondensed(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textPrimary,
+                              ),
                             ),
                           ),
                         ],
@@ -216,8 +297,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         '✓ Material 3 Anime Theme (#1B1F29 / #FF6A1A)\n'
                         '✓ Supabase Auth con variables de entorno (.env)\n'
                         '✓ AuthGate reactivo con StreamBuilder\n'
-                        '✓ Selector rápido de perfiles del equipo (Lucas, Otue, Jesús)\n'
-                        '✓ Arquitectura en 3 capas (models, services, screens, widgets, providers)',
+                        '✓ Consumo API con dio, FutureBuilder (3 estados) y TTL 15m\n'
+                        '✓ Failover dual: API-Sports -> Sportradar -> Mock Local\n'
+                        '✓ Navegación por constructor a MatchDetailScreen con Hero\n'
+                        '✓ Widgets modulares: MatchCard y OddsButton',
                         style: GoogleFonts.rajdhani(
                           fontSize: 14,
                           color: AppTheme.textSecondary,
