@@ -7,7 +7,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:volleybet/models/match_model.dart';
+import 'package:provider/provider.dart';
 import 'package:volleybet/models/user_profile.dart';
+import 'package:volleybet/providers/betting_provider.dart';
 import 'package:volleybet/screens/auth/auth_gate.dart';
 import 'package:volleybet/screens/auth/login_screen.dart';
 import 'package:volleybet/screens/home/home_screen.dart';
@@ -299,9 +301,12 @@ void main() {
     testWidgets('HomeScreen muestra branding, balance de puntos y botón de cerrar sesión',
         (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.darkTheme,
-          home: const HomeScreen(),
+        ChangeNotifierProvider(
+          create: (_) => BettingProvider(),
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const HomeScreen(),
+          ),
         ),
       );
 
@@ -337,9 +342,12 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.darkTheme,
-          home: const HomeScreen(),
+        ChangeNotifierProvider(
+          create: (_) => BettingProvider(),
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const HomeScreen(),
+          ),
         ),
       );
 
@@ -776,10 +784,13 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.darkTheme,
-          home: const Scaffold(
-            body: MatchCard(match: match),
+        ChangeNotifierProvider(
+          create: (_) => BettingProvider(),
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const Scaffold(
+              body: MatchCard(match: match),
+            ),
           ),
         ),
       );
@@ -1136,9 +1147,12 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.darkTheme,
-          home: const MatchDetailScreen(match: match),
+        ChangeNotifierProvider(
+          create: (_) => BettingProvider(),
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const MatchDetailScreen(match: match),
+          ),
         ),
       );
 

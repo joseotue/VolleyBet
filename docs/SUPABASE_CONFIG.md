@@ -29,3 +29,15 @@ await Supabase.initialize(
 ### B. Seguridad de las Claves
 - La **Publishable Key** es la que viaja en la aplicación móvil/web y está protegida mediante las políticas **Row Level Security (RLS)** en Postgres.
 - La **Secret Key** omite todas las políticas RLS. Solo se debe usar en scripts administrativos o funciones serverless protegidas en backend, nunca en código que se compile hacia el usuario final.
+
+---
+
+## 3. Tabla `bets` con RLS (HU-03 / HU-04)
+
+Ejecutar una vez el script [`supabase/migrations/20261023_hu03_hu04_bets_rls.sql`](../supabase/migrations/20261023_hu03_hu04_bets_rls.sql) en **Supabase Dashboard → SQL Editor → New query → Run**. Es idempotente.
+
+Qué crea:
+- Tabla `public.bets` (más columnas `home_team`, `away_team`, `settled_at`) con RLS: cada usuario solo ve, crea, edita y borra sus propias apuestas (`auth.uid() = user_id`). Editar y borrar solo se permite mientras la apuesta está `PENDING`.
+- Trigger `bets_apply_balance` que mueve `profiles.points_balance` en la misma transacción: descuenta al apostar, ajusta la diferencia al editar, reembolsa al cancelar y abona `monto * cuota` al liquidar como `WON`. Rechaza apuestas que superen el saldo.
+
+Requisito previo: la tabla `public.profiles` del esquema de HU-01 debe existir con una fila por usuario.

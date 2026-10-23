@@ -1,6 +1,8 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/bet_model.dart';
 import '../models/user_profile.dart';
+import 'betting_repository.dart';
 
 /// Perfil de acceso rápido para demostración y evaluación con el equipo docente.
 class TeamQuickProfile {
@@ -18,7 +20,7 @@ class TeamQuickProfile {
 }
 
 /// Servicio singleton para la integración y operaciones con Supabase Auth y Database.
-class SupabaseService {
+class SupabaseService implements BettingRepository {
   SupabaseService._internal();
   static final SupabaseService instance = SupabaseService._internal();
 
@@ -94,6 +96,9 @@ class SupabaseService {
   /// Usuario autenticado actual en Supabase
   User? get currentUser => isInitialized ? client.auth.currentUser : null;
 
+  @override
+  String? get currentUserId => currentUser?.id;
+
   /// Sesión activa actual
   Session? get currentSession => isInitialized ? client.auth.currentSession : null;
 
@@ -159,6 +164,7 @@ class SupabaseService {
   }
 
   /// Obtener el perfil del usuario desde public.profiles
+  @override
   Future<UserProfile?> getUserProfile(String userId) async {
     if (!isInitialized) return null;
     try {
@@ -175,5 +181,81 @@ class SupabaseService {
     } catch (_) {
       return null;
     }
+  }
+
+  // ===========================================================================
+  // HU-03: CRUD de apuestas sobre la tabla `bets` protegida con RLS
+  // (auth.uid() = user_id). El trigger `bets_apply_balance` mueve el saldo
+  // de `profiles` en la misma transacción.
+  // ===========================================================================
+
+  /// CREATE — Inserta una apuesta PENDING del usuario autenticado.
+  @override
+  Future<BetModel> createBet(BetModel bet) async {
+    final data = await client
+        .from('bets')
+        .insert(bet.toInsertJson())
+        .select()
+        .single();
+    return BetModel.fromJson(data);
+  }
+
+  /// READ — Historial propio; RLS impide ver apuestas de otros usuarios.
+  @override
+  Future<List<BetModel>> getUserBets() async {
+    final data = await client
+        .from('bets')
+        .select()
+        .order('created_at', ascending: false);
+    return data.map(BetModel.fromJson).toList();
+  }
+
+  /// UPDATE — Modifica el monto de una apuesta pendiente.
+  @override
+  Future<BetModel> updateBetAmount({
+    required String betId,
+    required int amount,
+  }) async {
+    final data = await client
+        .from('bets')
+        .update({'points_staked': amount})
+        .eq('id', betId)
+        .eq('status', BetStatus.pending.value)
+        .select()
+        .single();
+    return BetModel.fromJson(data);
+  }
+
+  /// DELETE — Cancela una apuesta pendiente y el trigger reembolsa el monto.
+  @override
+  Future<void> cancelBet(String betId) async {
+    await client
+        .from('bets')
+        .delete()
+        .eq('id', betId)
+        .eq('status', BetStatus.pending.value);
+  }
+
+  /// Liquida una apuesta tras la simulación (HU-04). El premio lo calcula el trigger.
+  @override
+  Future<BetModel> settleBet({required String betId, required bool won}) async {
+    final status = won ? BetStatus.won : BetStatus.lost;
+    final data = await client
+        .from('bets')
+        .update({'status': status.value})
+        .eq('id', betId)
+        .eq('status', BetStatus.pending.value)
+        .select()
+        .single();
+    return BetModel.fromJson(data);
+  }
+
+  /// Persiste las insignias del usuario en `profiles.badges`.
+  @override
+  Future<void> updateBadges({
+    required String userId,
+    required List<String> badges,
+  }) async {
+    await client.from('profiles').update({'badges': badges}).eq('id', userId);
   }
 }

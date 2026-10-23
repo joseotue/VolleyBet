@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../models/match_model.dart';
+import '../../providers/betting_provider.dart';
+import '../../services/simulation_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/bet_form.dart';
 import '../../widgets/odds_button.dart';
+import '../../widgets/points_badge.dart';
+import '../../widgets/simulation_control_dialog.dart';
 
 /// Pantalla de detalle de un partido de voleibol (HU-02).
 /// Recibe obligatoriamente la entidad por constructor: `required MatchModel match` (Requisito 3).
@@ -108,21 +114,28 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 
-  Widget _buildPeriodsBreakdown() {
-    final periods = widget.match.scores?.periods;
-    if (periods == null || periods.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final periodKeys = ['first', 'second', 'third', 'fourth', 'fifth'];
+  Widget _buildPeriodsBreakdown(SimulationResult? simulation) {
     final validPeriods = <MapEntry<String, Map>>[];
 
-    for (var i = 0; i < periodKeys.length; i++) {
-      final key = periodKeys[i];
-      if (periods.containsKey(key) && periods[key] is Map) {
-        final periodMap = periods[key] as Map;
-        if (periodMap['home'] != null || periodMap['away'] != null) {
-          validPeriods.add(MapEntry('Set ${i + 1}', periodMap));
+    if (simulation != null) {
+      for (var i = 0; i < simulation.sets.length; i++) {
+        final set = simulation.sets[i];
+        validPeriods.add(MapEntry('Set ${i + 1}', {'home': set.home, 'away': set.away}));
+      }
+    } else {
+      final periods = widget.match.scores?.periods;
+      if (periods == null || periods.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      final periodKeys = ['first', 'second', 'third', 'fourth', 'fifth'];
+      for (var i = 0; i < periodKeys.length; i++) {
+        final key = periodKeys[i];
+        if (periods.containsKey(key) && periods[key] is Map) {
+          final periodMap = periods[key] as Map;
+          if (periodMap['home'] != null || periodMap['away'] != null) {
+            validPeriods.add(MapEntry('Set ${i + 1}', periodMap));
+          }
         }
       }
     }
@@ -226,11 +239,74 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 
+  bool get _isCancelled =>
+      widget.match.status == 'CANC' || widget.match.status == 'CANCELLED';
+
+  Future<void> _placeBet(BettingProvider betting, int amount) async {
+    final team = _selectedTeam;
+    if (team == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final bet = await betting.placeBet(
+        match: widget.match,
+        selectedTeam: team,
+        amount: amount,
+      );
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Apuesta registrada: ${bet.pointsStaked} pts a ${bet.selectedTeam} '
+            '(premio potencial ${bet.potentialPayout} pts)',
+          ),
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _selectedTeam = null;
+          _selectedTeamIndex = null;
+        });
+      }
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(BettingProvider.describeError(e)),
+          backgroundColor: AppTheme.errorRed,
+        ),
+      );
+    }
+  }
+
+  Future<void> _openSimulation() {
+    final match = widget.match;
+    return SimulationControlDialog.show(
+      context,
+      matchId: match.id,
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      runSimulation: (provider) => provider.simulateMatch(
+        matchId: match.id,
+        homeTeam: match.homeTeam,
+        awayTeam: match.awayTeam,
+        homeOdds: match.homeOdds,
+        awayOdds: match.awayOdds,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final match = widget.match;
+    final betting = context.watch<BettingProvider>();
+    final simulation = betting.simulationFor(match.id);
     final scores = match.scores;
-    final hasScores = scores != null && (scores.home != null || scores.away != null);
+    final homeScore = simulation?.homeSets ?? scores?.home;
+    final awayScore = simulation?.awaySets ?? scores?.away;
+    final hasScores = homeScore != null || awayScore != null;
+    final isFinished = match.isFinished || simulation != null;
+    final statusLabel = simulation != null ? 'FINALIZADO (SIMULADO)' : match.statusDisplay;
+    final canBet = !_isCancelled && !isFinished;
+    final matchBets = betting.betsForMatch(match.id);
+    final pendingBets = matchBets.where((b) => b.isPending).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -243,6 +319,12 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
             letterSpacing: 1.5,
           ),
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Center(child: PointsBadge(compact: true)),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -327,7 +409,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                                       ),
                                     ),
                                     child: Text(
-                                      '${scores.home ?? 0} : ${scores.away ?? 0}',
+                                      '${homeScore ?? 0} : ${awayScore ?? 0}',
                                       style: GoogleFonts.teko(
                                         fontSize: 34,
                                         fontWeight: FontWeight.bold,
@@ -357,7 +439,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    match.statusDisplay,
+                                    statusLabel,
                                     style: GoogleFonts.barlowCondensed(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
@@ -403,7 +485,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
               ),
 
               // Parciales por set si existen
-              _buildPeriodsBreakdown(),
+              _buildPeriodsBreakdown(simulation),
 
               const SizedBox(height: 16),
 
@@ -428,12 +510,12 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                             ),
                           ),
                           Text(
-                            (match.status == 'CANC' || match.status == 'CANCELLED')
+                            _isCancelled
                                 ? 'APUESTAS CANCELADAS'
-                                : (match.isFinished ? 'PARTIDO FINALIZADO' : 'CUOTA COLECTIVA'),
+                                : (isFinished ? 'PARTIDO FINALIZADO' : 'CUOTA COLECTIVA'),
                             style: GoogleFonts.barlowCondensed(
                               fontSize: 12,
-                              color: (match.status == 'CANC' || match.status == 'CANCELLED')
+                              color: _isCancelled
                                   ? AppTheme.errorRed
                                   : AppTheme.textSecondary,
                               fontWeight: FontWeight.bold,
@@ -449,7 +531,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                               label: '1 (Local)',
                               odds: match.homeOdds,
                               isSelected: _selectedTeamIndex == 0,
-                              onPressed: (match.status == 'CANC' || match.status == 'CANCELLED')
+                              onPressed: (_isCancelled || simulation != null)
                                   ? null
                                   : () {
                                       setState(() {
@@ -470,7 +552,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                               label: '2 (Visita)',
                               odds: match.awayOdds,
                               isSelected: _selectedTeamIndex == 1,
-                              onPressed: (match.status == 'CANC' || match.status == 'CANCELLED')
+                              onPressed: (_isCancelled || simulation != null)
                                   ? null
                                   : () {
                                       setState(() {
@@ -519,6 +601,105 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                             ],
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        // Formulario de apuesta con validación (HU-03 / Requisito 6)
+                        if (canBet)
+                          BetForm(
+                            key: ValueKey('bet-form-$_selectedTeam'),
+                            availableBalance: betting.pointsBalance,
+                            odds: _selectedTeam == match.homeTeam
+                                ? match.homeOdds
+                                : match.awayOdds,
+                            onSubmit: (amount) => _placeBet(betting, amount),
+                          )
+                        else
+                          Text(
+                            'Las apuestas están cerradas para este partido.',
+                            style: GoogleFonts.rajdhani(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Apuestas del usuario en este partido y motor de simulación (HU-04)
+              Card(
+                color: AppTheme.cardColor,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'TUS APUESTAS EN ESTE PARTIDO',
+                        style: GoogleFonts.barlowCondensed(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryOrange,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (matchBets.isEmpty)
+                        Text(
+                          'Aún no apuestas en este encuentro.',
+                          style: GoogleFonts.rajdhani(
+                            fontSize: 14,
+                            color: AppTheme.textSecondary,
+                          ),
+                        )
+                      else
+                        for (final bet in matchBets)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Text(
+                              '${bet.selectedTeam} · ${bet.pointsStaked} pts @ '
+                              '${bet.odds.toStringAsFixed(2)} · ${bet.status.label}'
+                              '${bet.pointsWon > 0 ? ' (+${bet.pointsWon} pts)' : ''}',
+                              style: GoogleFonts.rajdhani(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ),
+                      if (simulation != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Resultado simulado: ${simulation.winner} gana ${simulation.scoreLabel}',
+                          style: GoogleFonts.rajdhani(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.secondaryOrange,
+                          ),
+                        ),
+                      ] else if (!match.isFinished && !_isCancelled) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          icon: betting.isSimulating
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppTheme.primaryOrange,
+                                  ),
+                                )
+                              : const Icon(Icons.fast_forward_rounded),
+                          label: Text(
+                            pendingBets.isEmpty
+                                ? 'Simular Partido'
+                                : 'Simular Partido (${pendingBets.length} pendiente(s))',
+                          ),
+                          onPressed: betting.isSimulating ? null : _openSimulation,
+                        ),
                       ],
                     ],
                   ),
@@ -547,7 +728,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                       const SizedBox(height: 10),
                       _buildInfoRow('ID del Partido', match.id),
                       _buildInfoRow('Fecha', _formatDateTime(match.matchDate)),
-                      _buildInfoRow('Estado', match.statusDisplay),
+                      _buildInfoRow('Estado', statusLabel),
                       _buildInfoRow('Fuente', match.sourceProvider),
                     ],
                   ),

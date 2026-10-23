@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../providers/betting_provider.dart';
 import '../../services/supabase_service.dart';
-import '../../models/user_profile.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/points_badge.dart';
+import '../bets/bet_history_screen.dart';
 import '../matches/matches_screen.dart';
 
 /// Pantalla protegida temporal de VolleyBet para verificar sesión autenticada.
@@ -15,39 +18,25 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  UserProfile? _userProfile;
-  bool _isLoadingProfile = true;
   bool _isSigningOut = false;
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
-  }
-
-  Future<void> _loadProfile() async {
-    final user = SupabaseService.instance.currentUser;
-    if (user != null) {
-      final profile = await SupabaseService.instance.getUserProfile(user.id);
-      if (mounted) {
-        setState(() {
-          _userProfile = profile;
-          _isLoadingProfile = false;
-        });
-      }
-    } else {
-      if (mounted) {
-        setState(() => _isLoadingProfile = false);
-      }
-    }
+    // Saldo, insignias e historial se cargan en el estado global (HU-04).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<BettingProvider>().loadUserData();
+    });
   }
 
   Future<void> _handleSignOut() async {
     if (_isSigningOut) return;
     setState(() => _isSigningOut = true);
+    final betting = context.read<BettingProvider>();
 
     try {
       await SupabaseService.instance.signOut();
+      betting.reset();
       // AuthGate escuchará el cambio de auth y redirigirá de inmediato al Login
     } catch (e) {
       if (mounted) {
@@ -64,12 +53,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final betting = context.watch<BettingProvider>();
     final user = SupabaseService.instance.currentUser;
     final email = user?.email ?? 'Sin correo';
-    final username = _userProfile?.username ??
+    final username = betting.username ??
         user?.userMetadata?['username']?.toString() ??
         email.split('@').first;
-    final points = _userProfile?.pointsBalance ?? 1000;
 
     return Scaffold(
       appBar: AppBar(
@@ -90,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
+          const Center(child: PointsBadge(compact: true)),
           IconButton(
             icon: const Icon(Icons.logout, color: AppTheme.textSecondary),
             tooltip: 'Cerrar Sesión',
@@ -140,46 +130,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // Badge de puntos virtuales
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: AppTheme.background,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppTheme.primaryOrange.withValues(alpha: 0.6),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                      // Saldo reactivo con context.watch<BettingProvider>() (Requisito 7)
+                      const PointsBadge(),
+                      if (betting.badges.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 6,
                           children: [
-                            const Icon(
-                              Icons.monetization_on_rounded,
-                              color: AppTheme.primaryOrange,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 8),
-                            _isLoadingProfile
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppTheme.primaryOrange,
-                                    ),
-                                  )
-                                : Text(
-                                    '$points PTS VIRTUALES',
-                                    style: GoogleFonts.barlowCondensed(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.primaryOrange,
-                                      letterSpacing: 1,
-                                    ),
-                                  ),
+                            for (final badge in betting.badges)
+                              Chip(
+                                avatar: const Icon(
+                                  Icons.military_tech_rounded,
+                                  color: AppTheme.primaryOrange,
+                                  size: 18,
+                                ),
+                                label: Text(badge),
+                                backgroundColor: AppTheme.background,
+                                side: const BorderSide(color: AppTheme.dividerColor),
+                              ),
                           ],
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -265,6 +236,44 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 20),
 
+              // Tarjeta de acceso al historial de apuestas (HU-03 / HU-04)
+              Card(
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  leading: const Icon(
+                    Icons.receipt_long_rounded,
+                    color: AppTheme.primaryOrange,
+                    size: 32,
+                  ),
+                  title: Text(
+                    'MIS APUESTAS',
+                    style: GoogleFonts.teko(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryOrange,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${betting.activeBets.length} pendiente(s) · Racha actual: ${betting.streakCount} acierto(s)',
+                    style: GoogleFonts.rajdhani(
+                      fontSize: 14,
+                      color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded, color: AppTheme.textSecondary),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const BetHistoryScreen()),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
               // Tarjeta de estado de arquitectura y requisitos docentes
               Card(
                 child: Padding(
@@ -300,7 +309,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         '✓ Consumo API con dio, FutureBuilder (3 estados) y TTL 15m\n'
                         '✓ Failover dual: API-Sports -> Sportradar -> Mock Local\n'
                         '✓ Navegación por constructor a MatchDetailScreen con Hero\n'
-                        '✓ Widgets modulares: MatchCard y OddsButton',
+                        '✓ Widgets modulares: MatchCard y OddsButton\n'
+                        '✓ HU-03: BetForm con validación y CRUD de bets bajo RLS\n'
+                        '✓ HU-04: BettingProvider + motor de simulación acelerada',
                         style: GoogleFonts.rajdhani(
                           fontSize: 14,
                           color: AppTheme.textSecondary,
