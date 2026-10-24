@@ -1,5 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../models/bet_model.dart';
 import '../models/user_profile.dart';
 import 'betting_repository.dart';
@@ -50,7 +51,8 @@ class SupabaseService implements BettingRepository {
   /// Nunca expone la Secret Key (Service Role).
   static Future<void> initialize() async {
     final supabaseUrl = dotenv.env['SUPABASE_URL'];
-    final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ??
+    final supabaseAnonKey =
+        dotenv.env['SUPABASE_ANON_KEY'] ??
         dotenv.env['SUPABASE_PUBLISHABLE_KEY'];
 
     if (supabaseUrl == null || supabaseUrl.isEmpty) {
@@ -100,7 +102,8 @@ class SupabaseService implements BettingRepository {
   String? get currentUserId => currentUser?.id;
 
   /// Sesión activa actual
-  Session? get currentSession => isInitialized ? client.auth.currentSession : null;
+  Session? get currentSession =>
+      isInitialized ? client.auth.currentSession : null;
 
   /// Stream reactivo de cambios en el estado de autenticación
   Stream<AuthState> get authStateChanges =>
@@ -132,15 +135,17 @@ class SupabaseService implements BettingRepository {
     // Si se crea el usuario, asegurar entrada en profiles si aún no existe sin sobrescribir puntos
     if (response.user != null) {
       try {
-        await client.from('profiles').upsert(
-          {
-            'id': response.user!.id,
-            'username': username ?? email.split('@').first,
-            'points_balance': 1000,
-          },
-          onConflict: 'id',
-          ignoreDuplicates: true,
-        );
+        await client
+            .from('profiles')
+            .upsert(
+              {
+                'id': response.user!.id,
+                'username': username ?? email.split('@').first,
+                'points_balance': 1000,
+              },
+              onConflict: 'id',
+              ignoreDuplicates: true,
+            );
       } catch (e) {
         // En caso de que RLS o trigger de DB lo gestione
       }
@@ -181,6 +186,15 @@ class SupabaseService implements BettingRepository {
     } catch (_) {
       return null;
     }
+  }
+
+  Future<List<UserProfile>> getRankingProfiles() async {
+    final data = await client
+        .from('profiles')
+        .select()
+        .order('points_balance', ascending: false);
+
+    return data.map(UserProfile.fromJson).toList();
   }
 
   // ===========================================================================

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/betting_provider.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/points_badge.dart';
 import '../bets/bet_history_screen.dart';
 import '../matches/matches_screen.dart';
+import '../ranking/ranking_screen.dart';
 
 /// Pantalla protegida temporal de VolleyBet para verificar sesión autenticada.
 /// Cumple con la validación de transición de AuthGate y Cierre de Sesión (HU-01).
@@ -56,7 +58,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final betting = context.watch<BettingProvider>();
     final user = SupabaseService.instance.currentUser;
     final email = user?.email ?? 'Sin correo';
-    final username = betting.username ??
+    final username =
+        betting.username ??
         user?.userMetadata?['username']?.toString() ??
         email.split('@').first;
 
@@ -65,7 +68,11 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.sports_volleyball, color: AppTheme.primaryOrange, size: 28),
+            const Icon(
+              Icons.sports_volleyball,
+              color: AppTheme.primaryOrange,
+              size: 28,
+            ),
             const SizedBox(width: 8),
             Text(
               'VOLLEYBET',
@@ -80,6 +87,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           const Center(child: PointsBadge(compact: true)),
+          IconButton(
+            icon: const Icon(Icons.leaderboard_rounded),
+            tooltip: 'Ver ranking',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RankingScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: AppTheme.textSecondary),
             tooltip: 'Cerrar Sesión',
@@ -101,7 +118,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       CircleAvatar(
                         radius: 36,
-                        backgroundColor: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                        backgroundColor: AppTheme.primaryOrange.withValues(
+                          alpha: 0.2,
+                        ),
                         child: Text(
                           username.isNotEmpty ? username[0].toUpperCase() : 'V',
                           style: GoogleFonts.teko(
@@ -146,7 +165,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 label: Text(badge),
                                 backgroundColor: AppTheme.background,
-                                side: const BorderSide(color: AppTheme.dividerColor),
+                                side: const BorderSide(
+                                  color: AppTheme.dividerColor,
+                                ),
                               ),
                           ],
                         ),
@@ -163,7 +184,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: const Color(0xFF222838),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: AppTheme.primaryOrange, width: 1.5),
+                  side: const BorderSide(
+                    color: AppTheme.primaryOrange,
+                    width: 1.5,
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -175,7 +199,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryOrange.withValues(alpha: 0.18),
+                              color: AppTheme.primaryOrange.withValues(
+                                alpha: 0.18,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
@@ -239,7 +265,10 @@ class _HomeScreenState extends State<HomeScreen> {
               // Tarjeta de acceso al historial de apuestas (HU-03 / HU-04)
               Card(
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   leading: const Icon(
                     Icons.receipt_long_rounded,
                     color: AppTheme.primaryOrange,
@@ -262,11 +291,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: AppTheme.textSecondary),
+                  trailing: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppTheme.textSecondary,
+                  ),
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const BetHistoryScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const BetHistoryScreen(),
+                      ),
                     );
                   },
                 ),
