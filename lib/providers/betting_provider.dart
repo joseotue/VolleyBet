@@ -5,7 +5,11 @@ import '../models/match_model.dart';
 import '../models/user_profile.dart';
 import '../services/betting_repository.dart';
 import '../services/simulation_service.dart';
+import '../services/sports_api_service.dart';
 import '../services/supabase_service.dart';
+
+/// Consulta el estado y marcador real de un partido por su id.
+typedef MatchResultLookup = Future<MatchModel?> Function(String matchId);
 
 /// Resumen de una simulación con la liquidación de las apuestas del partido.
 class SimulationOutcome {
@@ -34,14 +38,23 @@ class BettingProvider extends ChangeNotifier {
   static const int sniperStreakTarget = 3;
   static const int defaultBalance = 1000;
 
+  /// Tope de partidos consultados a la API por actualización y espera mínima
+  /// antes de volver a consultar el mismo partido (cuota gratuita: 100/día).
+  static const int maxResultLookupsPerRefresh = 10;
+  static const Duration resultRecheckInterval = Duration(minutes: 15);
+
   final BettingRepository _repository;
   final SimulationService _simulationService;
+  final MatchResultLookup _resultLookup;
 
   BettingProvider({
     BettingRepository? repository,
     SimulationService? simulationService,
+    MatchResultLookup? resultLookup,
   })  : _repository = repository ?? SupabaseService.instance,
-        _simulationService = simulationService ?? SimulationService();
+        _simulationService = simulationService ?? SimulationService(),
+        _resultLookup =
+            resultLookup ?? ((id) => SportsApiService.instance.getMatchResult(id));
 
   String? _userId;
   String? _username;
@@ -53,6 +66,8 @@ class BettingProvider extends ChangeNotifier {
   bool _isSimulating = false;
   String? _errorMessage;
   final Map<String, SimulationResult> _simulatedMatches = {};
+  final Map<String, DateTime> _lastResultCheck = {};
+  bool _isSettlingResults = false;
 
   String? get username => _username;
   int get pointsBalance => _pointsBalance;
@@ -85,6 +100,7 @@ class BettingProvider extends ChangeNotifier {
     }
     if (userId != _userId) {
       _simulatedMatches.clear();
+      _lastResultCheck.clear();
     }
     _userId = userId;
     _isLoading = true;
@@ -106,6 +122,84 @@ class BettingProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+
+    if (_errorMessage == null) {
+      await settleWithRealResults();
+    }
+  }
+
+  /// Liquida las apuestas pendientes de partidos reales ya terminados:
+  /// acertar el ganador paga monto * cuota (WON) y fallar no paga (LOST).
+  /// Un partido cancelado devuelve lo apostado. Consulta una vez por partido,
+  /// como máximo cada [resultRecheckInterval], y omite los partidos simulados.
+  Future<List<BetModel>> settleWithRealResults() async {
+    if (_isSettlingResults || _userId == null) return const [];
+
+    final now = DateTime.now();
+    final matchIds = activeBets
+        .map((b) => b.matchId)
+        .toSet()
+        .where((id) => !_simulatedMatches.containsKey(id))
+        .where((id) {
+          final last = _lastResultCheck[id];
+          return last == null || now.difference(last) >= resultRecheckInterval;
+        })
+        .take(maxResultLookupsPerRefresh)
+        .toList();
+    if (matchIds.isEmpty) return const [];
+
+    _isSettlingResults = true;
+    final settled = <BetModel>[];
+    try {
+      for (final matchId in matchIds) {
+        _lastResultCheck[matchId] = now;
+        final MatchModel? result;
+        try {
+          result = await _resultLookup(matchId);
+        } catch (e) {
+          debugPrint('⚠️ [BettingProvider] Sin resultado para $matchId: $e');
+          continue;
+        }
+        if (result == null) continue;
+
+        if (result.isCancelled) {
+          for (final bet in pendingBetsForMatch(matchId)) {
+            final voided = await _repository.voidBet(bet.id);
+            settled.add(voided);
+            _replaceBet(voided);
+            _pointsBalance += bet.pointsStaked;
+          }
+          continue;
+        }
+
+        final winner = result.winnerTeam;
+        if (winner == null) continue;
+        for (final bet in pendingBetsForMatch(matchId)) {
+          // Si el nombre del equipo no coincide con la API, no se adivina el resultado.
+          if (bet.selectedTeam != result.homeTeam && bet.selectedTeam != result.awayTeam) {
+            continue;
+          }
+          final updated = await _repository.settleBet(
+            betId: bet.id,
+            won: bet.selectedTeam == winner,
+          );
+          settled.add(updated);
+          _replaceBet(updated);
+          _pointsBalance += updated.pointsWon;
+        }
+      }
+
+      if (settled.isNotEmpty) {
+        _streakCount = SimulationService.currentStreak(_bets);
+        await _unlockSniperIfEarned();
+      }
+    } catch (e) {
+      _errorMessage = describeError(e);
+    } finally {
+      _isSettlingResults = false;
+      if (settled.isNotEmpty || _errorMessage != null) notifyListeners();
+    }
+    return settled;
   }
 
   /// Limpia el estado al cerrar sesión.
@@ -120,6 +214,7 @@ class BettingProvider extends ChangeNotifier {
     _isSimulating = false;
     _errorMessage = null;
     _simulatedMatches.clear();
+    _lastResultCheck.clear();
     notifyListeners();
   }
 
@@ -130,6 +225,9 @@ class BettingProvider extends ChangeNotifier {
     required int amount,
   }) async {
     final userId = _requireUser();
+    if (!match.isUpcoming) {
+      throw StateError('Solo se puede apostar en partidos por jugar');
+    }
     _ensureAffordable(amount);
     final odds = selectedTeam == match.homeTeam ? match.homeOdds : match.awayOdds;
 
@@ -222,14 +320,7 @@ class BettingProvider extends ChangeNotifier {
       _simulatedMatches[matchId] = result;
       _streakCount = SimulationService.currentStreak(_bets);
 
-      var sniperUnlocked = false;
-      final userId = _userId;
-      if (_streakCount >= sniperStreakTarget && !hasSniperBadge && userId != null) {
-        final newBadges = [..._badges, sniperBadge];
-        await _repository.updateBadges(userId: userId, badges: newBadges);
-        _badges = List.unmodifiable(newBadges);
-        sniperUnlocked = true;
-      }
+      final sniperUnlocked = await _unlockSniperIfEarned();
 
       return SimulationOutcome(
         result: result,
@@ -306,6 +397,18 @@ class BettingProvider extends ChangeNotifier {
     if (error is AuthException) return error.message;
     if (error is StateError) return error.message;
     return error.toString().replaceFirst('Exception: ', '');
+  }
+
+  /// Desbloquea "Francotirador" con 3 aciertos consecutivos (una sola vez).
+  Future<bool> _unlockSniperIfEarned() async {
+    final userId = _userId;
+    if (_streakCount < sniperStreakTarget || hasSniperBadge || userId == null) {
+      return false;
+    }
+    final newBadges = [..._badges, sniperBadge];
+    await _repository.updateBadges(userId: userId, badges: newBadges);
+    _badges = List.unmodifiable(newBadges);
+    return true;
   }
 
   String _requireUser() {

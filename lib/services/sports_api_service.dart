@@ -34,6 +34,10 @@ class SportsApiService {
   final Map<String, _CacheEntry> _cacheByDate = {};
   String _activeSource = 'mock-local';
 
+  // Caché de resultados por partido: los finalizados no se vuelven a consultar
+  // y el resto respeta el mismo TTL, para cuidar la cuota diaria de la API.
+  final Map<String, ({MatchModel match, DateTime timestamp})> _resultsById = {};
+
   SportsApiService({
     Dio? dio,
     this.assetBundle,
@@ -73,6 +77,78 @@ class SportsApiService {
 
   void clearCache() {
     _cacheByDate.clear();
+    _resultsById.clear();
+  }
+
+  /// Estado y marcador actual de un partido por su id, para liquidar apuestas
+  /// con el resultado real (HU-03/04). Los ids `sr:` se consultan en Sportradar
+  /// y el resto en API-Sports. Devuelve null si el partido no existe.
+  Future<MatchModel?> getMatchResult(String matchId) async {
+    final cached = _resultsById[matchId];
+    if (cached != null &&
+        (cached.match.isFinished ||
+            cached.match.isCancelled ||
+            DateTime.now().difference(cached.timestamp) < cacheTtl)) {
+      return cached.match;
+    }
+
+    final match = matchId.startsWith('sr:')
+        ? await _fetchResultFromSportradar(matchId)
+        : await _fetchResultFromApiSports(matchId);
+    if (match != null) {
+      _resultsById[matchId] = (match: match, timestamp: DateTime.now());
+    }
+    return match;
+  }
+
+  Future<MatchModel?> _fetchResultFromApiSports(String matchId) async {
+    final apiKey = overrideApiSportsKey ??
+        (dotenv.isInitialized ? dotenv.env['API_SPORTS_KEY'] : null);
+    if (apiKey == null || apiKey.isEmpty || apiKey == 'your_api_sports_key_here') {
+      throw Exception('API_SPORTS_KEY no configurada');
+    }
+
+    final response = await dio.get(
+      'https://v1.volleyball.api-sports.io/games',
+      queryParameters: {'id': matchId},
+      options: Options(headers: {'x-apisports-key': apiKey}),
+    );
+
+    final data = response.data is String ? jsonDecode(response.data) : response.data;
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Formato de respuesta inesperado de API-Sports');
+    }
+    final errors = data['errors'];
+    if ((errors is Map && errors.isNotEmpty) || (errors is List && errors.isNotEmpty)) {
+      throw Exception('API-Sports devolvió errores: $errors');
+    }
+
+    final rawList = data['response'];
+    if (rawList is! List || rawList.isEmpty || rawList.first is! Map) return null;
+    return MatchModel.fromApiSports(
+      Map<String, dynamic>.from(rawList.first as Map),
+      source: 'api-sports',
+    );
+  }
+
+  Future<MatchModel?> _fetchResultFromSportradar(String matchId) async {
+    final apiKey = overrideSportradarKey ??
+        (dotenv.isInitialized ? dotenv.env['SPORTRADAR_API_KEY'] : null);
+    if (apiKey == null || apiKey.isEmpty || apiKey == 'your_sportradar_api_key_here') {
+      throw Exception('SPORTRADAR_API_KEY no configurada');
+    }
+
+    final response = await dio.get(
+      'https://api.sportradar.com/volleyball/trial/v2/en/sport_events/$matchId/summary',
+      queryParameters: {'api_key': apiKey},
+      options: Options(headers: {'Accept': 'application/json'}),
+    );
+
+    final data = response.data is String ? jsonDecode(response.data) : response.data;
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Formato de respuesta inesperado de Sportradar');
+    }
+    return MatchModel.fromSportradar(data, source: 'sportradar');
   }
 
   String _formatDate(DateTime date) {

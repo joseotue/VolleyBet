@@ -569,6 +569,17 @@ class FakeBettingRepository implements BettingRepository {
   }
 
   @override
+  Future<BetModel> voidBet(String betId) async {
+    final bet = rows[betId]!;
+    balance += bet.pointsStaked;
+    _seq++;
+    return rows[betId] = bet.copyWith(
+      status: BetStatus.cancelled,
+      settledAt: DateTime(2026, 10, 23, 11, _seq),
+    );
+  }
+
+  @override
   Future<void> updateBadges({required String userId, required List<String> badges}) async {
     badgeUpdateCount++;
     this.badges = List.of(badges);

@@ -24,5 +24,9 @@ abstract class BettingRepository {
   /// Liquida una apuesta tras la simulación (WON abona monto * cuota).
   Future<BetModel> settleBet({required String betId, required bool won});
 
+  /// Anula una apuesta de un partido cancelado (CANCELLED). El trigger reembolsa
+  /// el monto y la apuesta queda visible en el historial.
+  Future<BetModel> voidBet(String betId);
+
   Future<void> updateBadges({required String userId, required List<String> badges});
 }
