@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/user_profile.dart';
+import '../../providers/betting_provider.dart';
 import '../../services/supabase_service.dart';
 import '../../widgets/ranking_row.dart';
 
@@ -17,13 +19,23 @@ class _RankingScreenState extends State<RankingScreen> {
   @override
   void initState() {
     super.initState();
-    _rankingFuture = SupabaseService.instance.getRankingProfiles();
+    _rankingFuture = _loadRanking();
   }
 
   void _reloadRanking() {
     setState(() {
-      _rankingFuture = SupabaseService.instance.getRankingProfiles();
+      _rankingFuture = _loadRanking();
     });
+  }
+
+  Future<List<UserProfile>> _loadRanking() async {
+    final profiles = await SupabaseService.instance.getRankingProfiles();
+    if (!mounted) return profiles;
+
+    await context.read<BettingProvider>().unlockLeaderBadgeIfRankingLeader(
+      profiles,
+    );
+    return profiles;
   }
 
   @override

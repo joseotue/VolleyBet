@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/bet_model.dart';
 import '../models/match_model.dart';
+import '../models/user_profile.dart';
 import '../services/betting_repository.dart';
 import '../services/simulation_service.dart';
 import '../services/supabase_service.dart';
@@ -27,7 +28,9 @@ class SimulationOutcome {
 /// Toda pantalla que muestre el saldo lo lee con `context.watch<BettingProvider>()`
 /// o `Consumer<BettingProvider>`, y se redibuja con cada `notifyListeners()`.
 class BettingProvider extends ChangeNotifier {
+  static const String juniorBadge = 'Experto Junior en Voleibol';
   static const String sniperBadge = 'Francotirador';
+  static const String leaderBadge = 'Líder';
   static const int sniperStreakTarget = 3;
   static const int defaultBalance = 1000;
 
@@ -60,6 +63,7 @@ class BettingProvider extends ChangeNotifier {
   bool get isSimulating => _isSimulating;
   String? get errorMessage => _errorMessage;
   bool get hasSniperBadge => _badges.contains(sniperBadge);
+  bool get hasLeaderBadge => _badges.contains(leaderBadge);
 
   List<BetModel> get activeBets => _bets.where((b) => b.isPending).toList();
   List<BetModel> get settledBets => _bets.where((b) => !b.isPending).toList();
@@ -239,6 +243,35 @@ class BettingProvider extends ChangeNotifier {
       _isSimulating = false;
       notifyListeners();
     }
+  }
+
+  /// Desbloquea "Líder" cuando el usuario autenticado ocupa el primer lugar.
+  /// Recibe el ranking ya ordenado por puntos y persiste la insignia una sola vez.
+  Future<bool> unlockLeaderBadgeIfRankingLeader(
+    List<UserProfile> ranking,
+  ) async {
+    final userId = _userId ?? _repository.currentUserId;
+    if (userId == null || ranking.isEmpty || ranking.first.id != userId) {
+      return false;
+    }
+
+    _userId = userId;
+    final mergedBadges = <String>{...ranking.first.badges, ..._badges};
+
+    if (mergedBadges.contains(leaderBadge)) {
+      if (!hasLeaderBadge) {
+        _badges = List.unmodifiable(mergedBadges);
+        notifyListeners();
+      }
+      return false;
+    }
+
+    mergedBadges.add(leaderBadge);
+    final newBadges = List<String>.unmodifiable(mergedBadges);
+    await _repository.updateBadges(userId: userId, badges: newBadges);
+    _badges = newBadges;
+    notifyListeners();
+    return true;
   }
 
   /// Simula a partir de una apuesta del historial (sin el MatchModel cargado).

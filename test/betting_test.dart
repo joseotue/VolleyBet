@@ -319,6 +319,43 @@ void main() {
       expect(repo.badges, contains(BettingProvider.sniperBadge));
     });
 
+    test('el primer lugar desbloquea la insignia Líder una sola vez', () async {
+      final repo = FakeBettingRepository(balance: 1000);
+      final provider = BettingProvider(repository: repo);
+      await provider.loadUserData();
+
+      final ranking = [
+        UserProfile(id: 'user-1', username: 'Otue', pointsBalance: 2000),
+        UserProfile(id: 'user-2', username: 'Lucas', pointsBalance: 1500),
+      ];
+
+      expect(await provider.unlockLeaderBadgeIfRankingLeader(ranking), isTrue);
+      expect(provider.hasLeaderBadge, isTrue);
+      expect(repo.badges, contains(BettingProvider.leaderBadge));
+
+      expect(await provider.unlockLeaderBadgeIfRankingLeader(ranking), isFalse);
+      expect(repo.badgeUpdateCount, 1);
+      expect(
+        repo.badges.where((badge) => badge == BettingProvider.leaderBadge),
+        hasLength(1),
+      );
+    });
+
+    test('no desbloquea Líder cuando el usuario no está primero', () async {
+      final repo = FakeBettingRepository(balance: 1000);
+      final provider = BettingProvider(repository: repo);
+      await provider.loadUserData();
+
+      final ranking = [
+        UserProfile(id: 'user-2', username: 'Lucas', pointsBalance: 2000),
+        UserProfile(id: 'user-1', username: 'Otue', pointsBalance: 1500),
+      ];
+
+      expect(await provider.unlockLeaderBadgeIfRankingLeader(ranking), isFalse);
+      expect(provider.hasLeaderBadge, isFalse);
+      expect(repo.badgeUpdateCount, 0);
+    });
+
     test('simulateFromBet resuelve el partido desde el historial', () async {
       final repo = FakeBettingRepository(balance: 1000);
       final provider = BettingProvider(
@@ -430,6 +467,7 @@ class FakeBettingRepository implements BettingRepository {
   int balance;
   String? userId = 'user-1';
   List<String> badges = [];
+  int badgeUpdateCount = 0;
   final Map<String, BetModel> rows = {};
   int _seq = 0;
 
@@ -476,7 +514,9 @@ class FakeBettingRepository implements BettingRepository {
   Future<BetModel> updateBetAmount({required String betId, required int amount}) async {
     final bet = rows[betId]!;
     final delta = amount - bet.pointsStaked;
-    if (delta > balance) throw Exception('Saldo insuficiente (disponibles: $balance pts)');
+    if (delta > balance) {
+      throw Exception('Saldo insuficiente (disponibles: $balance pts)');
+    }
     balance -= delta;
     return rows[betId] = bet.copyWith(pointsStaked: amount);
   }
@@ -502,6 +542,7 @@ class FakeBettingRepository implements BettingRepository {
 
   @override
   Future<void> updateBadges({required String userId, required List<String> badges}) async {
+    badgeUpdateCount++;
     this.badges = List.of(badges);
   }
 }
