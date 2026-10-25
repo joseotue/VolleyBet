@@ -9,6 +9,7 @@ import 'package:volleybet/models/user_profile.dart';
 import 'package:volleybet/providers/betting_provider.dart';
 import 'package:volleybet/screens/bets/bet_history_screen.dart';
 import 'package:volleybet/screens/matches/match_detail_screen.dart';
+import 'package:volleybet/screens/profile/profile_screen.dart';
 import 'package:volleybet/services/betting_repository.dart';
 import 'package:volleybet/services/simulation_service.dart';
 import 'package:volleybet/theme/app_theme.dart';
@@ -385,6 +386,33 @@ void main() {
       );
       await tester.pump();
       expect(find.text('750 PTS VIRTUALES'), findsOneWidget);
+    });
+
+    testWidgets('ProfileScreen muestra saldo y estado de las tres insignias',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repo = FakeBettingRepository(balance: 1400)
+        ..badges = [
+          BettingProvider.sniperBadge,
+          BettingProvider.leaderBadge,
+        ];
+      final provider = BettingProvider(repository: repo);
+      await provider.loadUserData();
+
+      await tester.pumpWidget(
+        _app(const ProfileScreen(), provider: provider),
+      );
+
+      expect(find.text('Otue'), findsOneWidget);
+      expect(find.text('1400 PTS VIRTUALES'), findsOneWidget);
+      expect(find.text(BettingProvider.juniorBadge), findsOneWidget);
+      expect(find.text(BettingProvider.sniperBadge), findsOneWidget);
+      expect(find.text(BettingProvider.leaderBadge), findsOneWidget);
+      expect(find.text('2 DE 3'), findsOneWidget);
+      expect(find.text('DESBLOQUEADA'), findsNWidgets(2));
+      expect(find.text('BLOQUEADA'), findsOneWidget);
     });
 
     testWidgets('MatchDetailScreen: seleccionar cuota, apostar y ver saldo actualizado',

@@ -5,6 +5,7 @@ import '../../models/user_profile.dart';
 import '../../providers/betting_provider.dart';
 import '../../services/supabase_service.dart';
 import '../../widgets/ranking_row.dart';
+import '../profile/profile_screen.dart';
 
 class RankingScreen extends StatefulWidget {
   const RankingScreen({super.key});
@@ -44,6 +45,16 @@ class _RankingScreenState extends State<RankingScreen> {
       appBar: AppBar(
         title: const Text('RANKING'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_circle_rounded),
+            tooltip: 'Ver perfil',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Actualizar ranking',
