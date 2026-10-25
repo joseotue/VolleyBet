@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../theme/app_theme.dart';
 
 /// Formulario de monto de apuesta con validación estricta (HU-03 / Requisito 6).
@@ -44,6 +45,7 @@ class _BetFormState extends State<BetForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _amountController;
   bool _isSubmitting = false;
+  bool _isSubmitPressed = false;
 
   @override
   void initState() {
@@ -64,12 +66,20 @@ class _BetFormState extends State<BetForm> {
     if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _isSubmitting = true;
+      _isSubmitPressed = false;
+    });
     try {
       await widget.onSubmit(int.parse(_amountController.text.trim()));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  void _handleSubmitHighlight(bool isHighlighted) {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitPressed = isHighlighted);
   }
 
   @override
@@ -114,19 +124,71 @@ class _BetFormState extends State<BetForm> {
             ),
           ),
           const SizedBox(height: 12),
-          ElevatedButton.icon(
-            icon: _isSubmitting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
+          AnimatedScale(
+            scale: _isSubmitPressed ? 0.97 : 1,
+            duration: const Duration(milliseconds: 110),
+            curve: Curves.easeOut,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeInOut,
+              decoration: BoxDecoration(
+                color: _isSubmitting
+                    ? AppTheme.secondaryOrange
+                    : _isSubmitPressed
+                    ? AppTheme.secondaryOrange
+                    : AppTheme.primaryOrange,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: _isSubmitPressed
+                    ? const []
+                    : [
+                        BoxShadow(
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.22),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  key: const Key('animated-submit-button'),
+                  onTap: _isSubmitting ? null : _submit,
+                  onHighlightChanged: _handleSubmitHighlight,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
                     ),
-                  )
-                : const Icon(Icons.check_circle_rounded),
-            label: Text(widget.submitLabel),
-            onPressed: _isSubmitting ? null : _submit,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (_isSubmitting)
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        else
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.white,
+                          ),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.submitLabel,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
