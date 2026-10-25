@@ -7,6 +7,7 @@ import '../../services/supabase_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/points_badge.dart';
 import '../bets/bet_history_screen.dart';
+import '../learn/trivia_screen.dart';
 import '../matches/matches_screen.dart';
 import '../ranking/ranking_screen.dart';
 
@@ -257,6 +258,45 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Tarjeta de acceso al Modo Aprender (HU-05)
+              Card(
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  leading: const Icon(
+                    Icons.school_rounded,
+                    color: AppTheme.primaryOrange,
+                    size: 34,
+                  ),
+                  title: Text(
+                    'MODO APRENDER',
+                    style: GoogleFonts.teko(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryOrange,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Supera una trivia de 5 preguntas sobre voleibol.',
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppTheme.textSecondary,
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TriviaScreen()),
+                    );
+                  },
                 ),
               ),
 

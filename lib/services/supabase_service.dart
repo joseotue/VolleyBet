@@ -2,6 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/bet_model.dart';
+import '../models/trivia_reward_result.dart';
 import '../models/user_profile.dart';
 import 'betting_repository.dart';
 
@@ -195,6 +196,27 @@ class SupabaseService implements BettingRepository {
         .order('points_balance', ascending: false);
 
     return data.map(UserProfile.fromJson).toList();
+  }
+
+  /// Entrega 200 puntos por acierto sin superar la capacidad acumulada.
+  /// Supabase calcula y suma la recompensa en una transacción atómica.
+  Future<TriviaRewardResult> claimTriviaReward({
+    required int correctAnswers,
+  }) async {
+    if (correctAnswers < 0 || correctAnswers > 5) {
+      throw ArgumentError.value(
+        correctAnswers,
+        'correctAnswers',
+        'Debe estar entre 0 y 5',
+      );
+    }
+
+    final data = await client.rpc(
+      'claim_trivia_reward',
+      params: {'p_correct_answers': correctAnswers},
+    );
+
+    return TriviaRewardResult.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
   // ===========================================================================
