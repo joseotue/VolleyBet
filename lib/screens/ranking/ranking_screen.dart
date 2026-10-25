@@ -20,10 +20,25 @@ class _RankingScreenState extends State<RankingScreen> {
     _rankingFuture = SupabaseService.instance.getRankingProfiles();
   }
 
+  void _reloadRanking() {
+    setState(() {
+      _rankingFuture = SupabaseService.instance.getRankingProfiles();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('RANKING')),
+      appBar: AppBar(
+        title: const Text('RANKING'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Actualizar ranking',
+            onPressed: _reloadRanking,
+          ),
+        ],
+      ),
       body: FutureBuilder<List<UserProfile>>(
         future: _rankingFuture,
         builder: (context, snapshot) {
@@ -50,6 +65,7 @@ class _RankingScreenState extends State<RankingScreen> {
               final profile = profiles[index];
 
               return RankingRow(
+                key: ValueKey('${profile.id}-${index + 1}'),
                 position: index + 1,
                 profile: profile,
                 isCurrentUser: profile.id == currentUserId,
