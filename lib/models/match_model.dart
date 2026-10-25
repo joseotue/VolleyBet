@@ -94,6 +94,28 @@ class MatchModel {
         s == 'CLOSED';
   }
 
+  /// Partido aún no iniciado: el único estado en que se aceptan apuestas.
+  bool get isUpcoming {
+    final s = status.toUpperCase();
+    return s == 'NS' || s == 'NOT_STARTED' || s == 'TBD';
+  }
+
+  /// Partido anulado: las apuestas pendientes se devuelven íntegras.
+  bool get isCancelled {
+    final s = status.toUpperCase();
+    return s == 'CANC' || s == 'CANCELLED' || s == 'ABANDONED';
+  }
+
+  /// Equipo ganador según los sets del marcador final, o null si el partido
+  /// no ha terminado o la API no informa un marcador concluyente.
+  String? get winnerTeam {
+    if (!isFinished) return null;
+    final home = scores?.home;
+    final away = scores?.away;
+    if (home == null || away == null || home == away) return null;
+    return home > away ? homeTeam : awayTeam;
+  }
+
   String get statusDisplay {
     final s = status.toUpperCase();
     if (isLive) {

@@ -286,6 +286,19 @@ class SupabaseService implements BettingRepository {
     return BetModel.fromJson(data);
   }
 
+  /// Anula una apuesta pendiente de un partido cancelado; el trigger la reembolsa.
+  @override
+  Future<BetModel> voidBet(String betId) async {
+    final data = await client
+        .from('bets')
+        .update({'status': BetStatus.cancelled.value})
+        .eq('id', betId)
+        .eq('status', BetStatus.pending.value)
+        .select()
+        .single();
+    return BetModel.fromJson(data);
+  }
+
   /// Persiste las insignias del usuario en `profiles.badges`.
   @override
   Future<void> updateBadges({

@@ -304,7 +304,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     final hasScores = homeScore != null || awayScore != null;
     final isFinished = match.isFinished || simulation != null;
     final statusLabel = simulation != null ? 'FINALIZADO (SIMULADO)' : match.statusDisplay;
-    final canBet = !_isCancelled && !isFinished;
+    // Solo se apuesta antes del inicio: con resultados reales, apostar en vivo sería ventajoso.
+    final canBet = match.isUpcoming && simulation == null;
     final matchBets = betting.betsForMatch(match.id);
     final pendingBets = matchBets.where((b) => b.isPending).toList();
 
@@ -614,7 +615,9 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                           )
                         else
                           Text(
-                            'Las apuestas están cerradas para este partido.',
+                            match.isLive
+                                ? 'Las apuestas se cierran al comenzar el partido.'
+                                : 'Las apuestas están cerradas para este partido.',
                             style: GoogleFonts.rajdhani(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
