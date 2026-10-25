@@ -108,3 +108,5 @@ env/
 _bmad/render/*
 !_bmad/render/.gitignore
 .bmad-loop/
+
+/docs/GUIA_COMPANEROS_SETUP.md
