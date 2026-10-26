@@ -317,7 +317,6 @@ void main() {
       // Branding y saldo
       expect(find.text('VOLLEYBET'), findsOneWidget);
       expect(find.text('1000 PTS VIRTUALES'), findsOneWidget);
-      expect(find.text('HU-01: Setup & Auth Completado'), findsOneWidget);
 
       // Botón de cerrar sesión en AppBar y al final
       expect(find.byTooltip('Cerrar Sesión'), findsOneWidget);

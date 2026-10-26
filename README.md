@@ -1,178 +1,188 @@
 # 🏐 VolleyBet — MVP & Evaluación UDD
 
-> Aplicación móvil y web de apuestas deportivas virtuales y gamificadas de voleibol con estética Anime Material 3, arquitectura limpia en 3 capas y backend serverless en Supabase.
+> Aplicación móvil y web de pronósticos deportivos virtuales y gamificados de voleibol con estética Anime Material 3, arquitectura limpia en 3 capas, backend serverless en Supabase y gestión de estado con Provider.
 
-Proyecto desarrollado para la asignatura **IIP323W (Programación Móvil con Flutter)** — **Universidad del Desarrollo (UDD)**.
+Proyecto desarrollado para la asignatura **IIP323W (Programación Móvil con Flutter)** — **Universidad del Desarrollo (UDD)**.  
+**Profesor:** Cristóbal Maturana
 
 ---
 
-## 👥 Equipo y Asignación de Roles
+## 👥 Equipo y Distribución de Trabajo
 
-| Integrante | Rol en el Proyecto | Historias de Usuario Asignadas |
+| Integrante | Rol en el Proyecto | Historias de Usuario Implementadas |
 |---|---|---|
 | **Lucas Riquelme** | **Persona 1:** Lead Backend, Base de Datos & Setup | **HU-01:** Setup, Tema M3, Supabase Auth & AuthGate<br>**HU-03:** Formulario con Validación & Tabla Supabase RLS (CRUD) |
-| **Otue** | **Persona 2:** Lead UI, API Externa & Navegación | **HU-02:** Consumo API deportiva (`dio`), `FutureBuilder` & `Hero`<br>**HU-05 (Parte A):** Animaciones Implícitas & Widgets modulares |
+| **Otue Rojas** | **Persona 2:** Lead UI, API Externa & Navegación | **HU-02:** Consumo API deportiva (`dio`), `FutureBuilder` & `Hero`<br>**HU-05 (Parte A):** Animaciones Implícitas & Widgets modulares |
 | **Jesús** | **Persona 3:** Estado Global, Simulación & Gamificación | **HU-04:** Manejo de estado con `Provider` & Motor de Simulación<br>**HU-05 (Parte B):** Modo Aprender (Trivia), Ranking & Build Web |
 
 ---
 
-## 🚀 Puesta en Marcha Rápida (Comandos)
+## 📌 Cumplimiento de la Pauta Docente (9 Requisitos Obligatorios)
 
-Sigue estos pasos para clonar, configurar y ejecutar el proyecto en tu máquina local:
+| # | Requisito Exigido | Implementación en VolleyBet | Evidencia en Código |
+|---|---|---|---|
+| **1** | **Login con Supabase** | `AuthGate` reactivo, registro, login y botones de demo | `lib/screens/auth/` |
+| **2** | **API Deportiva con `FutureBuilder`** | 3 estados (`waiting`, `error` con reintento, `data`) | `lib/screens/matches/matches_screen.dart` |
+| **3** | **Navegación por Constructor** | Paso directo de `MatchModel` sin variables globales | `lib/screens/matches/match_detail_screen.dart` |
+| **4** | **Animaciones (Hero + Implícita)** | `Hero` en escudos; `AnimatedScale` y `AnimatedContainer` | `lib/widgets/animated_odds_button.dart` y `Hero` |
+| **5** | **Tabla Supabase RLS (CRUD)** | `bets` con políticas RLS (`Create`, `Read`, `Update`, `Delete`) | `lib/services/supabase_service.dart` |
+| **6** | **Formulario con Validación** | `Form`, `GlobalKey<FormState>()` y validador de saldo | `lib/widgets/bet_form.dart` |
+| **7** | **Estado Global con `Provider`** | `MultiProvider`, `ChangeNotifier`, `context.watch` | `lib/providers/betting_provider.dart` |
+| **8** | **Widgets Propios Separados** | 8 componentes modulares independientes | `lib/widgets/` |
+| **9** | **Commits en GitHub y Web** | Commits equilibrados de los 3 integrantes y build web | `flutter build web` en `build/web` |
+
+---
+
+## 🚀 Cómo Hacerlo Funcionar (Puesta en Marcha)
+
+Sigue estos sencillos pasos para configurar y correr la aplicación en tu máquina:
 
 ### 1. Prerrequisitos
-* **Flutter SDK:** versión `>= 3.19.0` ([Instrucciones de instalación](https://docs.flutter.dev/get-started/install)).
+* **Flutter SDK:** versión `>= 3.19.0` ([Guía oficial de instalación](https://docs.flutter.dev/get-started/install)).
 * **Dart SDK:** incluido con Flutter.
-* **Google Chrome** (para probar en Web) o **Emulador Android / Dispositivo físico**.
+* **Google Chrome** (forma más rápida y recomendada para probar) o emulador/dispositivo Android.
 
-### 2. Clonar e Instalar Dependencias
-```bash
-# 1. Clonar el repositorio
-git clone <URL_DEL_REPOSITORIO>
-cd VolleyBet
+---
 
-# 2. Configurar variables de entorno
-cp .env.example .env
+### 2. Configurar Variables de Entorno (`.env`)
+
+En la raíz del proyecto, crea un archivo llamado exactamente `.env` (puedes tomar como base `.env.example`). Debe contener las credenciales de Supabase y de las APIs deportivas:
+
+```dotenv
+# Supabase Project Credentials
+SUPABASE_URL=https://urlsupzctpjdmtofbvwj.supabase.co
+SUPABASE_REST_URL=https://urlsupzctpjdmtofbvwj.supabase.co/rest/v1/
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_0NJxQ-SUnRKBniPntN_2oQ_4p4USQeO
+SUPABASE_ANON_KEY=sb_publishable_0NJxQ-SUnRKBniPntN_2oQ_4p4USQeO
+
+# Sports APIs (Cartelera en Vivo)
+API_SPORTS_KEY=b7541a26cfa1e67b768433112b9a617f
+SPORTRADAR_API_KEY=OIHZGdzBLs7GPFGElNMe78TP6LNPJSoEayjDYDi4
 ```
 
-> [!IMPORTANT]
-> Edita el archivo `.env` recién creado y define las credenciales públicas de Supabase (URL y Anon Key). Consulta los valores de referencia en [`docs/SUPABASE_CONFIG.md`](docs/SUPABASE_CONFIG.md). Nunca agregues credenciales secretas (service_role) en este archivo.
+> [!NOTE]
+> **Resiliencia de Cartelera:** La app implementa failover en 3 capas:
+> 1. Intenta consultar **API-Sports**.
+> 2. Si falla o se agota la cuota, conmuta automáticamente a **Sportradar**.
+> 3. Si ambas fallan o no hay conexión a internet, utiliza el respaldo local (`assets/mock_matches.json`), garantizando que la aplicación nunca se quede en blanco.
+
+---
+
+### 3. Descargar Paquetes y Verificar el Proyecto
+
+Abre una terminal en la carpeta del proyecto y ejecuta:
 
 ```bash
-# 3. Descargar paquetes de Flutter
+# 1. Descargar dependencias de Flutter
 flutter pub get
 
-# 4. Verificar integridad del código (debe reportar 0 errores)
+# 2. Análisis estático de código (debe reportar 0 issues)
 flutter analyze
 
-# 5. Ejecutar la suite de pruebas automatizadas (10/10 tests deben pasar)
+# 3. Correr la suite de pruebas unitarias y de widgets (71/71 tests pasan)
 flutter test
 ```
 
-### 3. Ejecutar la Aplicación
+---
+
+### 4. Ejecutar la Aplicación
+
 ```bash
-# Para ejecutar en el navegador Web (Recomendado para pruebas rápidas)
+# Opción A: Ejecutar en Google Chrome (Recomendado para evaluación rápida)
 flutter run -d chrome
 
-# Para ejecutar en emulador o dispositivo móvil conectado
+# Opción B: Ejecutar en entorno nativo de escritorio Linux
+flutter run -d linux
+
+# Opción C: Ejecutar en dispositivo móvil o emulador conectado
 flutter run
 ```
 
 ---
 
-## 🔑 Cuentas de Acceso Rápido (Demo & Evaluación)
+## 🔑 Cuentas de Acceso Rápido (Evaluación Docente)
 
-Para facilitar la evaluación docente sin tener que escribir correos ni contraseñas manualmente, la pantalla de Login incluye **botones de acceso rápido de un toque** para los 3 integrantes:
+Para no perder tiempo escribiendo credenciales manualmente en la pantalla de inicio de sesión (`LoginScreen`), existen **botones de acceso directo de 1 toque** para cada integrante del equipo con un saldo inicial precargado de **1,000 puntos**:
 
-* 👤 **Lucas:** `lucas@volleybet.udd` (Saldo inicial: 1,000 pts)
-* 👤 **Otue:** `otue@volleybet.udd` (Saldo inicial: 1,000 pts)
-* 👤 **Jesús:** `jesus@volleybet.udd` (Saldo inicial: 1,000 pts)
+| Botón de Acceso | Correo Electrónico | Contraseña | Saldo Inicial |
+|---|---|---|:---:|
+| **Lucas** | `lucas@volleybet.udd` | `volleybet123` | 1,000 pts |
+| **Otue** | `otue@volleybet.udd` | `volleybet123` | 1,000 pts |
+| **Jesús** | `jesus@volleybet.udd` | `volleybet123` | 1,000 pts |
+
+*También es posible crear usuarios nuevos mediante la pestaña "Registrarse" con confirmación directa.*
 
 ---
 
-## 🏛️ Arquitectura del Proyecto (3 Capas)
+## 🕹️ Guía de Demostración y Flujo de la App
 
-El código fuente en `lib/` está estrictamente organizado respetando la arquitectura requerida:
+Para evaluar todas las funcionalidades en menos de 5 minutos:
+
+1. **Inicio de Sesión (HU-01):**
+   * Presiona el botón rápido **"Lucas"** en el Login para entrar a la pantalla principal.
+2. **Explorar Cartelera & Transición Hero (HU-02):**
+   * Toca **"EXPLORAR CARTELERA"** para ver los partidos de voleibol en vivo y programados.
+   * Haz tap sobre cualquier partido: observa la animación fluida **Hero** en los escudos al pasar al detalle.
+3. **Formulario de Apuesta y Validación (HU-03):**
+   * En el detalle, selecciona un equipo y prueba ingresar un monto inválido (0 o superior al saldo) para verificar los mensajes de error.
+   * Ingresa un monto válido y confirma la apuesta: el saldo se descontará reactivamente.
+4. **Historial, CRUD y Liquidación (HU-03 & HU-04):**
+   * Ve a **"MIS APUESTAS"**: verás la apuesta creada en estado *Pendiente*.
+   * Puedes **editar el monto** o **cancelar la apuesta** con reembolso automático de puntos.
+   * Presiona **"Simular Partido"** (o liquidar con resultados reales) para resolver el encuentro y ver cómo se abonan las ganancias en caso de victoria.
+5. **Modo Aprender, Ranking e Insignias (HU-05):**
+   * Entra a **"MODO APRENDER"**, responde la trivia de voleibol y gana puntos adicionales y la insignia *"Experto Junior"*.
+   * Abre el icono de **Ranking** en la barra superior para ver la tabla de clasificación ordenada en tiempo real.
+   * En la vista de perfil podrás revisar las 3 insignias del sistema: *Experto Junior*, *Francotirador* y *Líder de Tabla*.
+
+---
+
+## 🏛️ Estructura y Arquitectura del Proyecto
+
+El código está estructurado en una arquitectura modular limpia en capas dentro de `lib/`:
 
 ```text
 lib/
-├── main.dart                 # Punto de entrada, carga de .env y MaterialApp
+├── main.dart                      # Punto de entrada, MultiProvider y carga de tema
 ├── theme/
-│   └── app_theme.dart        # Tema Anime Material 3 (Colores #1B1F29, #262B38, #FF6A1A)
-├── models/                   # Capa 1: Entidades tipadas con serialización fromJson
-│   ├── user_profile.dart     # Modelo de usuario, saldo y badges
-│   └── match_model.dart      # (HU-02) Modelo de partidos y cuotas colectivas
-├── services/                 # Capa 2: Servicios de red, API y persistencia externa
-│   ├── supabase_service.dart # Singleton y cliente Supabase Auth / Database
-│   └── sports_api_service.dart # (HU-02) Consumo de API deportiva con Dio
-├── screens/                  # Capa 3: Vistas completas de usuario
-│   ├── auth/
-│   │   ├── auth_gate.dart    # Guardián reactivo de sesión (StreamBuilder)
-│   │   └── login_screen.dart # Formulario con accesos rápidos de equipo
-│   ├── home/
-│   │   └── home_screen.dart  # Pantalla principal protegida y saldo de puntos
-│   ├── matches/              # (HU-02) Cartelera y detalle de partido con Hero
-│   ├── bets/                 # (HU-03) Formulario y CRUD de historial con RLS
-│   ├── simulation/           # (HU-04) Motor acelerado de partidos
-│   └── learn/                # (HU-05) Modo Aprender / Trivia
-├── widgets/                  # Componentes reutilizables modulares propios
-│   ├── match_card.dart       # Tarjeta de partido
-│   └── odds_button.dart      # Botón de cuota animado con AnimatedScale
-└── providers/                # Gestión de estado global con Provider
-    └── points_provider.dart  # Saldo reactivo compartido en toda la app
+│   └── app_theme.dart             # Tema Anime Material 3 (#1B1F29, #262B38, #FF6A1A)
+├── models/                        # Capa 1: Entidades de datos y serialización JSON
+│   ├── bet_model.dart             # Modelo de apuestas y estados (PENDING, WON, LOST, CANCELLED)
+│   ├── match_model.dart           # Modelo de partidos de voleibol y cuotas colectivas
+│   ├── trivia_reward_result.dart  # Resultado de recompensas de trivia
+│   └── user_profile.dart          # Perfil de usuario, saldo e insignias
+├── services/                      # Capa 2: Servicios de API y persistencia en Supabase
+│   ├── betting_repository.dart    # Interfaz del repositorio de apuestas
+│   ├── simulation_service.dart    # Motor de simulación acelerada de marcadores de sets
+│   ├── sports_api_service.dart    # Consumo con Dio de API-Sports, Sportradar y mock offline
+│   └── supabase_service.dart      # Autenticación, RLS, base de datos y RPC en Supabase
+├── screens/                       # Capa 3: Pantallas de la aplicación
+│   ├── auth/                      # AuthGate (StreamBuilder) y LoginScreen
+│   ├── home/                      # HomeScreen con navegación y saldo global
+│   ├── matches/                   # MatchesScreen (FutureBuilder 3 estados) y MatchDetailScreen (Hero)
+│   ├── bets/                      # BetHistoryScreen con gestión CRUD de apuestas
+│   ├── learn/                     # TriviaScreen (cuestionario interactivo de voleibol)
+│   ├── ranking/                   # RankingScreen (tabla de líderes en tiempo real)
+│   └── profile/                   # ProfileScreen (saldo e insignias desbloqueadas)
+├── widgets/                       # Componentes modulares independientes reutilizables
+│   ├── animated_odds_button.dart  # Botón de cuota con AnimatedScale y AnimatedContainer
+│   ├── badge_tile.dart            # Tarjeta de insignia con microinteracción
+│   ├── bet_card.dart              # Tarjeta de historial de apuesta
+│   ├── bet_form.dart              # Formulario con validación estricta y FormState
+│   ├── match_card.dart            # Tarjeta de partido con tag Hero
+│   ├── odds_button.dart           # Botón base de cuota
+│   ├── points_badge.dart          # Insignia de saldo reactiva con context.watch
+│   ├── ranking_row.dart           # Fila de posición en el ranking
+│   └── simulation_control_dialog.dart # Modal para disparo de simulación y liquidación
+└── providers/                     # Gestión de estado reactivo global
+    └── betting_provider.dart      # ChangeNotifier para saldo, apuestas, racha e insignias
 ```
 
 ---
 
-## 🌿 Flujo de Trabajo con Ramas Git (Git Workflow)
+## 📚 Documentación de Respaldo
 
-Para asegurar un historial de commits balanceado y ordenado para la evaluación docente en GitHub (*Insights > Contributors*), trabajaremos bajo la estrategia de **Feature Branches**:
-
-```mermaid
-gitGraph
-   commit id: "Initial commit"
-   commit id: "feat(setup): Base M3 & Auth (Lucas)"
-   branch feature/hu-02-api-matches
-   checkout feature/hu-02-api-matches
-   commit id: "feat(api): Dio & MatchModel (Otue)"
-   commit id: "feat(ui): FutureBuilder & Hero (Otue)"
-   checkout main
-   merge feature/hu-02-api-matches id: "Merge PR #1 (HU-02)"
-   branch feature/hu-03-crud-bets
-   checkout feature/hu-03-crud-bets
-   commit id: "feat(db): Tabla bets & RLS (Lucas)"
-   commit id: "feat(form): BetForm validado (Lucas)"
-   checkout main
-   merge feature/hu-03-crud-bets id: "Merge PR #2 (HU-03)"
-```
-
-### Reglas del Flujo de Trabajo:
-1. **La rama `main` es sagrada:** Contiene siempre código funcional, probado con `flutter test` y con `flutter analyze` en 0 errores.
-2. **Cada historia se desarrolla en su propia rama:**
-   * Otue: `feature/hu-02-api-matches`
-   * Lucas: `feature/hu-03-crud-bets`
-   * Jesús: `feature/hu-04-provider-simulation`
-   * Otue & Jesús: `feature/hu-05-gamification-ranking`
-
-### Paso a Paso para cada Integrante:
-
-```bash
-# 1. Asegurarse de tener la última versión de main
-git checkout main
-git pull origin main
-
-# 2. Crear y cambiar a la rama de tu historia
-git checkout -b feature/hu-0X-nombre-descriptivo
-
-# 3. Trabajar en el código de tu historia y hacer commits atómicos
-# (¡Recuerda que tus commits deben estar a tu nombre en Git!)
-git add .
-git commit -m "feat(modulo): descripción clara de lo implementado"
-
-# 4. Antes de subir o hacer merge, verificar calidad técnica:
-flutter analyze   # 0 advertencias
-flutter test      # todos los tests pasando
-
-# 5. Mantener tu rama al día con main para evitar conflictos:
-git fetch origin
-git merge origin/main
-
-# 6. Subir tu rama a GitHub:
-git push -u origin feature/hu-0X-nombre-descriptivo
-
-# 7. Crear un Pull Request (PR) en GitHub hacia main:
-# - Pedir revisión a un compañero de equipo.
-# - Una vez aprobado, hacer el merge hacia main.
-```
-
----
-
-## 📚 Documentación de Contexto (Para Humanos y Agentes IA)
-
-Si tú o tus compañeros utilizan asistentes de IA (Antigravity, Cursor, Claude Code, Copilot, ChatGPT), el repositorio cuenta con documentación estructurada que le da el 100% del contexto del proyecto sin alucinaciones:
-
-* 📋 **Historias de Usuario y Pauta UDD:** [`docs/HISTORIAS_DE_USUARIO.md`](docs/HISTORIAS_DE_USUARIO.md) — Desglose Gherkin de las 5 historias y los 9 requisitos de evaluación.
-* 📐 **Especificación Técnica Completa:** [`_bmad-output/specs/spec-volleybet/SPEC.md`](_bmad-output/specs/spec-volleybet/SPEC.md) — Definición de capacidades y reglas de negocio.
-* 🗺️ **Desglose de Épicas del MVP:** [`_bmad-output/planning-artifacts/epics.md`](_bmad-output/planning-artifacts/epics.md) — Tareas técnicas y arquitectura.
-* 🚦 **Estado del Sprint:** [`_bmad-output/implementation-artifacts/sprint-status.yaml`](_bmad-output/implementation-artifacts/sprint-status.yaml) — Estado de cada historia (`backlog`, `in-progress`, `review`, `done`).
-* 🔒 **Configuración de Supabase:** [`docs/SUPABASE_CONFIG.md`](docs/SUPABASE_CONFIG.md) — Endpoints y tablas de la base de datos.
+* 📋 **Historias de Usuario y Rúbrica UDD:** [`docs/HISTORIAS_DE_USUARIO.md`](docs/HISTORIAS_DE_USUARIO.md)
+* 🔒 **Configuración y Tablas de Supabase:** [`docs/SUPABASE_CONFIG.md`](docs/SUPABASE_CONFIG.md)
+* 📐 **Especificación Funcional BMad:** [`_bmad-output/specs/spec-volleybet/SPEC.md`](_bmad-output/specs/spec-volleybet/SPEC.md)
+* 🏁 **Retrospectiva del Sprint:** [`_bmad-output/implementation-artifacts/epic-1-retro-2026-10-25.md`](_bmad-output/implementation-artifacts/epic-1-retro-2026-10-25.md)

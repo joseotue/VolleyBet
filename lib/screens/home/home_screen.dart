@@ -348,57 +348,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 20),
 
-              // Tarjeta de estado de arquitectura y requisitos docentes
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.check_circle_rounded,
-                            color: AppTheme.successGreen,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'HU-01: Setup & Auth Completado',
-                              style: GoogleFonts.barlowCondensed(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        '✓ Material 3 Anime Theme (#1B1F29 / #FF6A1A)\n'
-                        '✓ Supabase Auth con variables de entorno (.env)\n'
-                        '✓ AuthGate reactivo con StreamBuilder\n'
-                        '✓ Consumo API con dio, FutureBuilder (3 estados) y TTL 15m\n'
-                        '✓ Failover dual: API-Sports -> Sportradar -> Mock Local\n'
-                        '✓ Navegación por constructor a MatchDetailScreen con Hero\n'
-                        '✓ Widgets modulares: MatchCard y OddsButton\n'
-                        '✓ HU-03: BetForm con validación y CRUD de bets bajo RLS\n'
-                        '✓ HU-04: BettingProvider + motor de simulación acelerada',
-                        style: GoogleFonts.rajdhani(
-                          fontSize: 14,
-                          color: AppTheme.textSecondary,
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
               // Botón de cerrar sesión
               ElevatedButton.icon(
                 icon: const Icon(Icons.logout_rounded),
